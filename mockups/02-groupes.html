@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Groupes</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    /* ── Group card ── */
+    .group-card {
+      background: white;
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .group-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .group-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #1A2440;
+      line-height: 1.2;
+    }
+    .group-desc {
+      font-size: 12px;
+      color: #788;
+      margin-top: 2px;
+    }
+    .group-badge-owner {
+      font-size: 10px;
+      font-weight: 700;
+      color: #1565C0;
+      background: #E3F2FD;
+      padding: 3px 8px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+    .group-members-row {
+      margin-bottom: 10px;
+    }
+    .group-members-label {
+      font-size: 11px;
+      color: #90A0B0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 7px;
+    }
+    .members-with-names {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .members-with-names::-webkit-scrollbar { display: none; }
+    .member-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .member-name {
+      font-size: 10px;
+      color: #607080;
+      font-weight: 500;
+      max-width: 44px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .member-self .member-name {
+      color: #1565C0;
+      font-weight: 700;
+    }
+
+    /* ── Upcoming tournaments mini list ── */
+    .group-tournaments {
+      border-top: 1px solid #EEF2F7;
+      padding-top: 8px;
+    }
+    .group-tourn-label {
+      font-size: 11px;
+      color: #90A0B0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .mini-tourn {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #F5F8FF;
+    }
+    .mini-tourn:last-child { border-bottom: none; }
+    .mini-tourn-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1A2440;
+    }
+    .mini-tourn-date {
+      font-size: 11px;
+      color: #90A0B0;
+      margin-top: 1px;
+    }
+    .mini-tourn-arrow {
+      font-size: 16px;
+      color: #B0C4D8;
+    }
+
+    /* ── Action buttons ── */
+    .group-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    /* ── Top action row ── */
+    .top-action-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px 0;
+    }
+    .btn-full { flex: 1; justify-content: center; }
+
+    /* ── Invite code pill ── */
+    .invite-code {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #F0F6FF;
+      border: 1.5px dashed #90CAF9;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #1565C0;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .invite-icon { font-size: 11px; }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <span class="status-icons">▲ ● ●●●</span>
+  </div>
+
+  <!-- App header -->
+  <div class="app-header">
+    <div class="header-row">
+      <div>
+        <div class="header-title">Mes Groupes</div>
+        <div class="header-subtitle">3 groupes · 14 membres</div>
+      </div>
+      <div class="header-avatar">TM</div>
+    </div>
+  </div>
+
+  <!-- Top actions -->
+  <div class="top-action-row">
+    <button class="btn btn-primary btn-full">+ Créer un groupe</button>
+    <button class="btn btn-outline btn-full">Rejoindre</button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Group 1 -->
+    <div class="group-card">
+      <div class="group-card-top">
+        <div>
+          <div class="group-name">Neptune de Nantes <span class="group-badge-owner">Propriétaire</span></div>
+          <div class="group-desc">Volley plage le mercredi soir 🏐</div>
+        </div>
+      </div>
+
+      <div class="group-members-row">
+        <div class="group-members-label">6 membres</div>
+        <div class="members-with-names">
+          <div class="member-col member-self">
+            <div class="avatar sz-md av-blue" style="border:2.5px solid #1565C0">TM</div>
+            <div class="member-name">Moi</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-pink">SL</div>
+            <div class="member-name">Sophie</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-green">RC</div>
+            <div class="member-name">Romain</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-orange">JD</div>
+            <div class="member-name">Julien</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-purple">MC</div>
+            <div class="member-name">Marie</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-teal">AR</div>
+            <div class="member-name">Alex</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group-tournaments">
+        <div class="group-tourn-label">Prochains tournois</div>
+        <div class="mini-tourn">
+          <div>
+            <div class="mini-tourn-name">Open Beach Nantes</div>
+            <div class="mini-tourn-date">Sam. 19 avr · 3x3 · Mixte</div>
+          </div>
+          <span class="mini-tourn-arrow">›</span>
+        </div>
+        <div class="mini-tourn">
+          <div>
+            <div class="mini-tourn-name">Cup Neptune Été</div>
+            <div class="mini-tourn-date">Dim. 4 mai · 3x3 · Mixte</div>
+          </div>
+          <span class="mini-tourn-arrow">›</span>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div class="invite-code"><span class="invite-icon">🔗</span> NP8A2Z</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-xs" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;" onclick="document.getElementById('invite-sheet').style.display='flex'">📨 Inviter</button>
+          <button class="btn btn-primary-light btn-xs">Modifier</button>
+          <button class="btn btn-xs" style="background:#FFEBEE;color:#C62828;">Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group 2 -->
+    <div class="group-card">
+      <div class="group-card-top">
+        <div>
+          <div class="group-name">Raptors 44</div>
+          <div class="group-desc">Tournois masculins Loire-Atlantique</div>
+        </div>
+      </div>
+
+      <div class="group-members-row">
+        <div class="group-members-label">5 membres</div>
+        <div class="members-with-names">
+          <div class="member-col member-self">
+            <div class="avatar sz-md av-indigo" style="border:2.5px solid #1565C0">TM</div>
+            <div class="member-name">Moi</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-teal">JD</div>
+            <div class="member-name">Julien</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-orange">PK</div>
+            <div class="member-name">Pierre</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-red">AR</div>
+            <div class="member-name">Arthur</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-green">LM</div>
+            <div class="member-name">Lucas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group-tournaments">
+        <div class="group-tourn-label">Prochain tournoi</div>
+        <div class="mini-tourn">
+          <div>
+            <div class="mini-tourn-name">Tournoi Été Saint-Nazaire</div>
+            <div class="mini-tourn-date">Dim. 20 avr · 4x4 · Masculin</div>
+          </div>
+          <span class="mini-tourn-arrow">›</span>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:6px;">
+        <button class="btn btn-xs" style="background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;" onclick="document.getElementById('invite-sheet').style.display='flex'">📨 Inviter</button>
+        <button class="btn btn-xs" style="background:#FFEBEE;color:#C62828;">Quitter le groupe</button>
+      </div>
+    </div>
+
+    <!-- Group 3 -->
+    <div class="group-card">
+      <div class="group-card-top">
+        <div>
+          <div class="group-name">Team Féminine Nantes</div>
+          <div class="group-desc">Tournois féminins et mixtes</div>
+        </div>
+      </div>
+
+      <div class="group-members-row">
+        <div class="group-members-label">4 membres</div>
+        <div class="members-with-names">
+          <div class="member-col member-self">
+            <div class="avatar sz-md av-blue" style="border:2.5px solid #1565C0">TM</div>
+            <div class="member-name">Moi</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-pink">SL</div>
+            <div class="member-name">Sophie</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-purple">MC</div>
+            <div class="member-name">Marie</div>
+          </div>
+          <div class="member-col">
+            <div class="avatar sz-md av-red">CB</div>
+            <div class="member-name">Clara</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group-tournaments">
+        <div class="group-tourn-label" style="color:#B0C0D0">Aucun tournoi à venir</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- ── Invite sheet overlay ── -->
+  <div id="invite-sheet" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;justify-content:center;" onclick="this.style.display='none'">
+    <div style="background:white;border-radius:20px 20px 0 0;padding:12px 20px 28px;width:100%" onclick="event.stopPropagation()">
+      <!-- Handle -->
+      <div style="width:40px;height:4px;background:#DDD;border-radius:4px;margin:0 auto 18px;"></div>
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:38px;margin-bottom:8px">👥</div>
+        <div style="font-size:18px;font-weight:800;color:#1A2440;line-height:1.3;margin-bottom:6px">Inviter dans<br>"Neptune de Nantes"</div>
+        <div style="font-size:13px;color:#90A0B0">Partagez le lien — vos amis pourront rejoindre directement.</div>
+      </div>
+      <!-- Link box -->
+      <div style="background:#F5F8FF;border:1px solid #D0D8F0;border-radius:10px;padding:10px 14px;font-size:12px;color:#445;margin-bottom:14px;word-break:break-all">
+        volley-app.com/rejoindre/<strong>NP8A2Z</strong>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <!-- Copy -->
+        <div style="display:flex;align-items:center;gap:12px;background:#E3F2FD;border-radius:12px;padding:14px 16px;cursor:pointer">
+          <span style="font-size:22px;width:28px;text-align:center">📋</span>
+          <span style="font-size:15px;font-weight:600;color:#1565C0">Copier le lien</span>
+        </div>
+        <!-- Share -->
+        <div style="display:flex;align-items:center;gap:12px;background:#F3E5F5;border-radius:12px;padding:14px 16px;cursor:pointer;flex-wrap:wrap">
+          <span style="font-size:22px;width:28px;text-align:center">📤</span>
+          <div>
+            <div style="font-size:15px;font-weight:600;color:#6A1B9A">Partager via…</div>
+            <div style="font-size:11px;color:#9C4DCC;margin-top:2px">WhatsApp · Messenger · Instagram…</div>
+          </div>
+        </div>
+      </div>
+      <!-- Close -->
+      <div style="text-align:center;padding:11px;border:1px solid #E0E0E0;border-radius:10px;font-size:14px;color:#666;cursor:pointer" onclick="document.getElementById('invite-sheet').style.display='none'">Fermer</div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+    </div>
+    <div class="nav-item active">
+      <div class="nav-icon">👥</div>
+      <div class="nav-label">Groupes</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🏆</div>
+      <div class="nav-label">Tournois</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label">Rechercher</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

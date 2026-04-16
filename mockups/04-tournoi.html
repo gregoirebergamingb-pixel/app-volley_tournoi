@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Tournoi</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    /* ── Info banner ── */
+    .info-banner {
+      margin: 0 12px 0;
+      background: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .info-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .info-cell-icon-label {
+      font-size: 10px;
+      color: #90A0B0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .info-cell-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1A2440;
+    }
+    .info-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #EEF2F7;
+      flex-wrap: wrap;
+    }
+
+    /* ── Team card ── */
+    .team-card {
+      background: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .team-card.mine {
+      border: 2px solid #1565C0;
+    }
+    .team-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .team-card-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1A2440;
+    }
+    .team-status-full {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2E7D32;
+      background: #E8F5E9;
+      padding: 3px 8px;
+      border-radius: 8px;
+    }
+    .team-status-open {
+      font-size: 11px;
+      font-weight: 700;
+      color: #E65100;
+      background: #FFF3E0;
+      padding: 3px 8px;
+      border-radius: 8px;
+    }
+
+    /* ── Team members row ── */
+    .team-members-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .team-member-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #445566;
+      margin-bottom: 4px;
+    }
+    .gender-icon {
+      font-size: 11px;
+    }
+    .empty-slot {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #B0C0D0;
+      margin-bottom: 4px;
+    }
+    .empty-slot-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px dashed #C0D0E0;
+      flex-shrink: 0;
+    }
+
+    /* ── Team footer ── */
+    .team-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #EEF2F7;
+    }
+
+    /* ── Section search bar ── */
+    .content-search {
+      padding: 0 12px;
+      margin-bottom: 4px;
+    }
+    .content-search .search-bar {
+      margin: 6px 0 0;
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <span class="status-icons">▲ ● ●●●</span>
+  </div>
+
+  <!-- App header with back -->
+  <div class="app-header">
+    <div class="back-btn">← Nos Tournois</div>
+    <div class="header-row">
+      <div>
+        <div class="header-title">Open Beach Nantes</div>
+        <div class="header-subtitle">Neptune de Nantes · 5 équipes</div>
+      </div>
+      <div class="header-avatar">TM</div>
+    </div>
+  </div>
+
+  <!-- Info banner -->
+  <div class="info-banner">
+    <div class="info-grid">
+      <div class="info-cell">
+        <span class="info-cell-icon-label">📅 Date</span>
+        <span class="info-cell-value">Sam. 19 avr. · 9h00</span>
+      </div>
+      <div class="info-cell">
+        <span class="info-cell-icon-label">📍 Lieu</span>
+        <span class="info-cell-value">Plage Beaujoire</span>
+      </div>
+    </div>
+    <div class="info-badges">
+      <span class="badge badge-blue">3x3</span>
+      <span class="badge badge-purple">Mixte</span>
+      <span class="badge badge-green">Gratuit</span>
+    </div>
+  </div>
+
+  <!-- Search inside content area -->
+  <div class="content-search">
+    <div class="search-bar">
+      <span>🔍</span>
+      <div class="search-text">Rechercher une équipe...</div>
+    </div>
+  </div>
+
+  <!-- Level filter chips -->
+  <div class="chips-row" style="padding-top:6px">
+    <div class="chip active">Tous les niveaux</div>
+    <div class="chip">Loisir</div>
+    <div class="chip">Départ.</div>
+    <div class="chip">Régional</div>
+    <div class="chip">National</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content" style="padding-top:8px">
+
+    <!-- My team — highlighted -->
+    <div class="team-card mine">
+      <div class="team-card-header">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#1565C0;margin-bottom:2px">MON ÉQUIPE</div>
+          <div class="team-card-name">Les Volcans</div>
+        </div>
+        <span class="team-status-open">2 places</span>
+      </div>
+
+      <div style="margin-bottom:6px">
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-blue">TM</div>
+          <span>Thomas Martin</span>
+          <span class="badge level-regional" style="padding:2px 6px;font-size:10px;margin-left:auto">Régional</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-pink">SL</div>
+          <span>Sophie Leroy</span>
+          <span class="badge level-departemental" style="padding:2px 6px;font-size:10px;margin-left:auto">Départ.</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-green">RC</div>
+          <span>Romain Chatel</span>
+          <span class="badge level-regional" style="padding:2px 6px;font-size:10px;margin-left:auto">Régional</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-orange">JD</div>
+          <span>Julien Dupont</span>
+          <span class="badge level-departemental" style="padding:2px 6px;font-size:10px;margin-left:auto">Départ.</span>
+        </div>
+        <div class="empty-slot">
+          <div class="empty-slot-dot"></div>
+          <span>Place libre · réservée femme</span>
+        </div>
+        <div class="empty-slot">
+          <div class="empty-slot-dot"></div>
+          <span>Place libre</span>
+        </div>
+      </div>
+
+      <div class="team-footer">
+        <span class="badge level-regional">Niveau moy. : Régional</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-xs" style="background:#FFEBEE;color:#C62828;">Quitter</button>
+          <button class="btn btn-primary-light btn-xs">Renommer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Other teams -->
+    <div class="section-label">Autres équipes (4)</div>
+
+    <!-- Team 2 — can join -->
+    <div class="team-card">
+      <div class="team-card-header">
+        <div class="team-card-name">Les Phénix</div>
+        <span class="team-status-open">1 place</span>
+      </div>
+
+      <div style="margin-bottom:6px">
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-indigo">NB</div>
+          <span>Nicolas Brun</span>
+          <span class="badge level-national" style="padding:2px 6px;font-size:10px;margin-left:auto">National</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-teal">LM</div>
+          <span>Lucie Morel</span>
+          <span class="badge level-regional" style="padding:2px 6px;font-size:10px;margin-left:auto">Régional</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-red">AP</div>
+          <span>Axel Petit</span>
+          <span class="badge level-national" style="padding:2px 6px;font-size:10px;margin-left:auto">National</span>
+        </div>
+        <div class="empty-slot">
+          <div class="empty-slot-dot"></div>
+          <span>Place libre</span>
+        </div>
+      </div>
+
+      <div class="team-footer">
+        <span class="badge level-national">Niveau moy. : National</span>
+        <button class="btn btn-primary btn-xs">Rejoindre</button>
+      </div>
+    </div>
+
+    <!-- Team 3 — full -->
+    <div class="team-card">
+      <div class="team-card-header">
+        <div class="team-card-name">Sable & Sel</div>
+        <span class="team-status-full">Complet</span>
+      </div>
+
+      <div style="margin-bottom:6px">
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-purple">VM</div>
+          <span>Victor Martin</span>
+          <span class="badge level-loisir" style="padding:2px 6px;font-size:10px;margin-left:auto">Loisir</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-pink">CB</div>
+          <span>Clara Bouchard</span>
+          <span class="badge level-departemental" style="padding:2px 6px;font-size:10px;margin-left:auto">Départ.</span>
+        </div>
+        <div class="team-member-item">
+          <div class="avatar sz-sm av-blue">PG</div>
+          <span>Paul Girard</span>
+          <span class="badge level-loisir" style="padding:2px 6px;font-size:10px;margin-left:auto">Loisir</span>
+        </div>
+      </div>
+
+      <div class="team-footer">
+        <span class="badge level-loisir">Niveau moy. : Loisir</span>
+        <button class="btn btn-disabled btn-xs">Complet</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- FAB — create team -->
+  <div class="fab">+</div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👥</div>
+      <div class="nav-label">Groupes</div>
+    </div>
+    <div class="nav-item active">
+      <div class="nav-icon">🏆</div>
+      <div class="nav-label">Tournois</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label">Rechercher</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "volleyball-tournament-backend",
+  "version": "1.0.0",
+  "description": "Backend pour l'app de tournois de volleyball",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "firebase-admin": "latest",
+    "jsonwebtoken": "latest",
+    "bcryptjs": "latest",
+    "twilio": "5.13.1"
+  }
+}
+  

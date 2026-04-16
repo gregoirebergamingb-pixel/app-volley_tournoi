@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accueil — Mes Tournois</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    /* ── Team card inside tournament ── */
+    .team-section {
+      background: #F0F6FF;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 8px;
+    }
+    .team-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .team-name-small {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1565C0;
+      margin-bottom: 6px;
+    }
+    .spots-label {
+      font-size: 11px;
+      color: #90A0B0;
+      font-weight: 500;
+    }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 4px;
+      background: #D8E8F8;
+      border-radius: 4px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #1565C0;
+      border-radius: 4px;
+    }
+
+    /* ── Countdown badge ── */
+    .countdown {
+      font-size: 11px;
+      font-weight: 700;
+      color: #E65100;
+      background: #FFF3E0;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .countdown.soon {
+      color: #2E7D32;
+      background: #E8F5E9;
+    }
+
+    /* ── Info row ── */
+    .info-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .info-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #607080;
+    }
+    .info-pill-icon { font-size: 12px; }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <span class="status-icons">▲ ● ●●●</span>
+  </div>
+
+  <!-- App header -->
+  <div class="app-header">
+    <div class="header-row">
+      <div>
+        <div class="header-title">Bonjour, Thomas 👋</div>
+        <div class="header-subtitle">Vos prochains tournois</div>
+      </div>
+      <div class="header-avatar">TM</div>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <div class="chips-row">
+    <div class="chip active">Tous</div>
+    <div class="chip">À venir</div>
+    <div class="chip">Ce week-end</div>
+    <div class="chip">Passés</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <div class="section-label">Ce week-end</div>
+
+    <!-- Card 1 — upcoming soon -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div>
+          <div class="t-card-name">Open Beach Nantes</div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📅</span>
+            <span>Sam. 19 avril · 9h00</span>
+          </div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📍</span>
+            <span>Plage de la Beaujoire, Nantes</span>
+          </div>
+          <div class="info-row">
+            <span class="badge badge-blue">3x3</span>
+            <span class="badge badge-purple">Mixte</span>
+            <span class="badge badge-green">Gratuit</span>
+          </div>
+        </div>
+        <span class="countdown">Dans 4j</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-name-small">Équipe : Les Volcans</div>
+        <div class="team-row">
+          <div class="avatars-stack">
+            <div class="avatar sz-sm av-blue">TM</div>
+            <div class="avatar sz-sm av-pink">SL</div>
+            <div class="avatar sz-sm av-green">RC</div>
+            <div class="avatar sz-sm av-more">+1</div>
+          </div>
+          <div>
+            <div class="spots-row">
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+              <div class="spot empty"></div>
+              <div class="spot empty"></div>
+            </div>
+            <div class="spots-label" style="text-align:right;margin-top:3px">4/6 joueurs</div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:67%"></div></div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div>
+          <div class="t-card-name">Tournoi Été Saint-Nazaire</div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📅</span>
+            <span>Dim. 20 avril · 10h00</span>
+          </div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📍</span>
+            <span>Stade Nautique, Saint-Nazaire</span>
+          </div>
+          <div class="info-row">
+            <span class="badge badge-blue">4x4</span>
+            <span class="badge badge-orange">Masculin</span>
+            <span class="badge badge-yellow">12€</span>
+          </div>
+        </div>
+        <span class="countdown">Dans 5j</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-name-small">Équipe : Team Raptors</div>
+        <div class="team-row">
+          <div class="avatars-stack">
+            <div class="avatar sz-sm av-indigo">TM</div>
+            <div class="avatar sz-sm av-teal">JD</div>
+            <div class="avatar sz-sm av-orange">PK</div>
+            <div class="avatar sz-sm av-purple">AR</div>
+          </div>
+          <div>
+            <div class="spots-row">
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+            </div>
+            <div class="spots-label" style="text-align:right;margin-top:3px">Complet ✓</div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#2E7D32"></div></div>
+      </div>
+    </div>
+
+    <div class="section-label">Plus tard</div>
+
+    <!-- Card 3 -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div>
+          <div class="t-card-name">Challenge Régional 2x2</div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📅</span>
+            <span>Dim. 4 mai · 8h30</span>
+          </div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📍</span>
+            <span>Gymnase Marcel Cerdan, Angers</span>
+          </div>
+          <div class="info-row">
+            <span class="badge badge-blue">2x2</span>
+            <span class="badge badge-teal">Féminin</span>
+            <span class="badge badge-yellow">8€</span>
+          </div>
+        </div>
+        <span class="countdown soon">Dans 19j</span>
+      </div>
+
+      <div class="team-section">
+        <div class="team-name-small">Équipe : Duo Dynamite</div>
+        <div class="team-row">
+          <div class="avatars-stack">
+            <div class="avatar sz-sm av-pink">SL</div>
+            <div class="avatar sz-sm av-purple">MC</div>
+          </div>
+          <div>
+            <div class="spots-row">
+              <div class="spot filled"></div>
+              <div class="spot filled"></div>
+            </div>
+            <div class="spots-label" style="text-align:right;margin-top:3px">Complet ✓</div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#2E7D32"></div></div>
+      </div>
+    </div>
+
+    <div class="section-label">Passés récemment</div>
+
+    <!-- Card 4 — past -->
+    <div class="t-card" style="opacity:0.6">
+      <div class="t-card-header">
+        <div>
+          <div class="t-card-name">Cup Neptune Nantes</div>
+          <div class="t-card-meta">
+            <span class="t-card-meta-icon">📅</span>
+            <span>Sam. 5 avril · 14h00</span>
+          </div>
+          <div class="info-row">
+            <span class="badge badge-blue">3x3</span>
+            <span class="badge badge-purple">Mixte</span>
+          </div>
+        </div>
+        <span class="badge badge-grey">Terminé</span>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👥</div>
+      <div class="nav-label">Groupes</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🏆</div>
+      <div class="nav-label">Tournois</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label">Rechercher</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

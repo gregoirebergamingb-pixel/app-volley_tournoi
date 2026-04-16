@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recherche de Tournois</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    /* ── Header adapted for search ── */
+    .search-header {
+      background: #1565C0;
+      padding: 10px 16px 16px;
+      flex-shrink: 0;
+    }
+    .search-header-title {
+      color: white;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      margin-bottom: 10px;
+    }
+    .search-input-wrapper {
+      background: white;
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .search-input-icon { font-size: 18px; color: #1565C0; }
+    .search-input-text {
+      font-size: 15px;
+      color: #1A2440;
+      font-weight: 500;
+      flex: 1;
+    }
+    .search-input-text.placeholder { color: #AAB; font-weight: 400; }
+    .search-clear {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #E8EEF4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #607080;
+      cursor: pointer;
+    }
+
+    /* ── Location filter row ── */
+    .location-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px 0;
+      flex-shrink: 0;
+    }
+    .location-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: white;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #546E7A;
+      border: 1.5px solid #D0D8E8;
+      cursor: pointer;
+    }
+    .location-chip.active {
+      background: #E3F2FD;
+      color: #1565C0;
+      border-color: #90CAF9;
+    }
+
+    /* ── Results header ── */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px 2px;
+    }
+    .results-count {
+      font-size: 11px;
+      color: #90A0B0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sort-select {
+      font-size: 12px;
+      color: #1565C0;
+      font-weight: 600;
+    }
+
+    /* ── Search result card ── */
+    .result-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      cursor: pointer;
+    }
+    .result-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .result-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1A2440;
+      line-height: 1.2;
+      flex: 1;
+    }
+    .result-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #788;
+      margin-top: 3px;
+    }
+    .result-org {
+      font-size: 11px;
+      color: #90A0B0;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .result-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #EEF2F7;
+    }
+    .teams-spots {
+      font-size: 12px;
+      color: #607080;
+    }
+
+    /* ── Highlight match ── */
+    .match-highlight {
+      background: #FFF9C4;
+      border-radius: 3px;
+      padding: 0 1px;
+    }
+
+    /* ── Empty / initial state ── */
+    .search-suggestions {
+      padding: 8px 0;
+    }
+    .suggestion-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 4px;
+      border-bottom: 1px solid #F0F4F8;
+      cursor: pointer;
+    }
+    .suggestion-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #E8F0FA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .suggestion-text {
+      font-size: 14px;
+      color: #1A2440;
+      font-weight: 500;
+    }
+    .suggestion-sub {
+      font-size: 11px;
+      color: #90A0B0;
+      margin-top: 1px;
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <span class="status-icons">▲ ● ●●●</span>
+  </div>
+
+  <!-- Search header -->
+  <div class="search-header">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="search-header-title">Rechercher</div>
+      <div class="header-avatar">TM</div>
+    </div>
+    <div class="search-input-wrapper">
+      <span class="search-input-icon">🔍</span>
+      <div class="search-input-text">Nantes</div>
+      <div class="search-clear">✕</div>
+    </div>
+  </div>
+
+  <!-- Format chips -->
+  <div class="chips-row">
+    <div class="chip active">Tous</div>
+    <div class="chip">2x2</div>
+    <div class="chip">3x3</div>
+    <div class="chip">4x4</div>
+    <div class="chip active-light">Mixte</div>
+    <div class="chip">Masculin</div>
+    <div class="chip">Féminin</div>
+  </div>
+
+  <!-- Location / date filter -->
+  <div class="location-row">
+    <div class="location-chip active">📅 Ce week-end</div>
+    <div class="location-chip">📅 Ce mois</div>
+    <div class="location-chip">📍 Près de moi</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content" style="padding-top:8px">
+
+    <div class="results-header">
+      <span class="results-count">6 tournois trouvés</span>
+      <span class="sort-select">↑ Date ▾</span>
+    </div>
+
+    <!-- Result 1 -->
+    <div class="result-card">
+      <div class="result-org">🏐 Neptune de Nantes</div>
+      <div class="result-card-header">
+        <div>
+          <div class="result-name">Open Beach <span class="match-highlight">Nantes</span></div>
+          <div class="result-meta">
+            <span>📅</span>
+            <span>Sam. 19 avr. · 9h00</span>
+          </div>
+          <div class="result-meta">
+            <span>📍</span>
+            <span>Plage de la Beaujoire, <span class="match-highlight">Nantes</span></span>
+          </div>
+        </div>
+        <span class="badge badge-orange">4j</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">3x3</span>
+        <span class="badge badge-purple">Mixte</span>
+        <span class="badge badge-green">Gratuit</span>
+      </div>
+      <div class="result-footer">
+        <span class="teams-spots">🏐 5/12 équipes · 7 équipes libres</span>
+        <button class="btn btn-primary btn-xs">Voir →</button>
+      </div>
+    </div>
+
+    <!-- Result 2 -->
+    <div class="result-card">
+      <div class="result-org">🏐 VolleyClub Nantais</div>
+      <div class="result-card-header">
+        <div>
+          <div class="result-name">Tournoi Indoor <span class="match-highlight">Nantes</span> 3x3</div>
+          <div class="result-meta">
+            <span>📅</span>
+            <span>Sam. 19 avr. · 14h00</span>
+          </div>
+          <div class="result-meta">
+            <span>📍</span>
+            <span>Gymnase Mangin, <span class="match-highlight">Nantes</span></span>
+          </div>
+        </div>
+        <span class="badge badge-orange">4j</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">3x3</span>
+        <span class="badge badge-teal">Féminin</span>
+        <span class="badge badge-yellow">10€</span>
+      </div>
+      <div class="result-footer">
+        <span class="teams-spots">🏐 4/8 équipes · 4 libres</span>
+        <button class="btn btn-primary btn-xs">Voir →</button>
+      </div>
+    </div>
+
+    <!-- Result 3 -->
+    <div class="result-card">
+      <div class="result-org">🏐 Association Sud-Loire</div>
+      <div class="result-card-header">
+        <div>
+          <div class="result-name">Défi <span class="match-highlight">Nantes</span> Sud 4x4</div>
+          <div class="result-meta">
+            <span>📅</span>
+            <span>Dim. 20 avr. · 9h00</span>
+          </div>
+          <div class="result-meta">
+            <span>📍</span>
+            <span>Salle omnisports Rezé, <span class="match-highlight">Nantes</span></span>
+          </div>
+        </div>
+        <span class="badge badge-orange">5j</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">4x4</span>
+        <span class="badge badge-purple">Mixte</span>
+        <span class="badge badge-yellow">15€</span>
+      </div>
+      <div class="result-footer">
+        <span class="teams-spots">🏐 6/10 équipes · 4 libres</span>
+        <button class="btn btn-primary btn-xs">Voir →</button>
+      </div>
+    </div>
+
+    <!-- Result 4 — complet -->
+    <div class="result-card" style="opacity:0.75">
+      <div class="result-org">🏐 Neptune de Nantes</div>
+      <div class="result-card-header">
+        <div>
+          <div class="result-name">Cup Neptune Printemps</div>
+          <div class="result-meta">
+            <span>📅</span>
+            <span>Dim. 20 avr. · 13h00</span>
+          </div>
+          <div class="result-meta">
+            <span>📍</span>
+            <span>Plage de la Beaujoire, Nantes</span>
+          </div>
+        </div>
+        <span class="badge badge-grey">Complet</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">3x3</span>
+        <span class="badge badge-purple">Mixte</span>
+        <span class="badge badge-green">Gratuit</span>
+      </div>
+      <div class="result-footer">
+        <span class="teams-spots">🏐 12/12 équipes</span>
+        <button class="btn btn-disabled btn-xs">Complet</button>
+      </div>
+    </div>
+
+    <!-- Result 5 -->
+    <div class="result-card">
+      <div class="result-org">🏐 Pays de la Loire Volley</div>
+      <div class="result-card-header">
+        <div>
+          <div class="result-name">Challenge Régional 2x2</div>
+          <div class="result-meta">
+            <span>📅</span>
+            <span>Sam. 26 avr. · 8h30</span>
+          </div>
+          <div class="result-meta">
+            <span>📍</span>
+            <span>Gymnase Marcel Cerdan, Angers</span>
+          </div>
+        </div>
+        <span class="badge badge-grey">11j</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">2x2</span>
+        <span class="badge badge-teal">Féminin</span>
+        <span class="badge badge-yellow">8€</span>
+      </div>
+      <div class="result-footer">
+        <span class="teams-spots">🏐 2/16 équipes · 14 libres</span>
+        <button class="btn btn-primary btn-xs">Voir →</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Accueil</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👥</div>
+      <div class="nav-label">Groupes</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🏆</div>
+      <div class="nav-label">Tournois</div>
+    </div>
+    <div class="nav-item active">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label">Rechercher</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
