@@ -183,7 +183,7 @@ function Groups({ user, onLogout }) {
                   <label>Nom du groupe <span className="required-star">*</span></label>
                   <input type="text" value={createName}
                     onChange={e => setCreateName(e.target.value)}
-                    placeholder="ex: Neptune de Nantes" required autoFocus />
+                    placeholder="ex: Neptune de Nantes" required />
                 </div>
                 <div className="form-group">
                   <label>Description</label>
@@ -209,7 +209,7 @@ function Groups({ user, onLogout }) {
                 <label>Code d'invitation <span className="required-star">*</span></label>
                 <input type="text" value={joinCode}
                   onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="ex: AB12CD" required autoFocus />
+                  placeholder="ex: AB12CD" required />
               </div>
               <div style={{ display:'flex', gap:'8px' }}>
                 <button type="submit" disabled={actionLoading}>{actionLoading ? 'Connexion…' : 'Rejoindre'}</button>
@@ -238,7 +238,7 @@ function Groups({ user, onLogout }) {
                 onClick={e => e.stopPropagation()}>
                   <div className="form-group">
                     <label>Nom du groupe</label>
-                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)} required autoFocus />
+                    <input type="text" value={editName} onChange={e => setEditName(e.target.value)} required />
                   </div>
                   <div className="form-group">
                     <label>Description</label>

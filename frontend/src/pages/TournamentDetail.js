@@ -164,125 +164,171 @@ function TournamentDetail({ user }) {
         </div>
       </div>
 
+      {/* Tout le contenu dans un seul scroll container */}
+    <div className="page-content" style={{ paddingTop: 8 }}>
+
       {/* Tournament info banner */}
-      <div style={{ margin:'0 12px', marginTop:8 }}>
-        <div className="tournament-info-grid">
-          <div className="info-cell">
-            <span className="info-label">📅 Date</span>
-            <span className="info-value">{dateStr}</span>
-          </div>
-          <div className="info-cell">
-            <span className="info-label">🕐 Heure</span>
-            <span className="info-value">{tournament.time}</span>
-          </div>
-          <div className="info-cell" style={{ gridColumn:'1/-1' }}>
-            <span className="info-label">📍 Lieu</span>
-            <span className="info-value">{tournament.location}</span>
-          </div>
+      <div className="tournament-info-grid" style={{ marginBottom: 8 }}>
+        <div className="info-cell">
+          <span className="info-label">📅 Date</span>
+          <span className="info-value">{dateStr}</span>
         </div>
-        <div style={{ display:'flex', gap:'6px', margin:'6px 0 2px', flexWrap:'wrap' }}>
-          <span className="badge badge-blue">{tournament.playerFormat || tournament.format}</span>
-          <span className={`badge ${GENDER_BADGE[tournament.gender] || 'badge-grey'}`}>
-            {GENDER_LABELS[tournament.gender] || tournament.gender}
-          </span>
-          {tournament.price > 0
-            ? <span className="badge badge-yellow">{tournament.price}€</span>
-            : <span className="badge badge-green">Gratuit</span>}
+        <div className="info-cell">
+          <span className="info-label">🕐 Heure</span>
+          <span className="info-value">{tournament.time}</span>
         </div>
+        <div className="info-cell" style={{ gridColumn: '1/-1' }}>
+          <span className="info-label">📍 Lieu</span>
+          <span className="info-value">{tournament.location}</span>
+        </div>
+      </div>
+
+      <div style={{ display:'flex', gap:'6px', margin:'6px 0 10px', flexWrap:'wrap' }}>
+        <span className="badge badge-blue">{tournament.playerFormat || tournament.format}</span>
+        <span className={`badge ${GENDER_BADGE[tournament.gender] || 'badge-grey'}`}>
+          {GENDER_LABELS[tournament.gender] || tournament.gender}
+        </span>
+        {tournament.price > 0
+          ? <span className="badge badge-yellow">{tournament.price}€</span>
+          : <span className="badge badge-green">Gratuit</span>}
       </div>
 
       {/* Search bar */}
-      <div style={{ padding:'8px 12px 0' }}>
-        <div className="search-bar">
-          <span className="search-bar-icon">🔍</span>
-          <input value={searchQ} onChange={e => setSearchQ(e.target.value)}
-            placeholder="Rechercher une équipe…" />
-          {searchQ && (
-            <button className="search-clear" onClick={() => setSearchQ('')}>✕</button>
-          )}
-        </div>
+      <div className="search-bar">
+        <span className="search-bar-icon">🔍</span>
+        <input
+          value={searchQ}
+          onChange={e => setSearchQ(e.target.value)}
+          placeholder="Rechercher une équipe…"
+        />
+        {searchQ && (
+          <button className="search-clear" onClick={() => setSearchQ('')}>✕</button>
+        )}
       </div>
 
       {/* Level filter chips */}
-      <div className="chips-row">
+      <div className="chips-row" style={{ paddingLeft: 0, paddingRight: 0 }}>
         {LEVEL_FILTERS.map((lv, i) => (
-          <div key={lv} className={`chip ${levelFilter === lv ? 'active' : ''}`}
-            onClick={() => setLevelFilter(lv)}>
+          <div
+            key={lv}
+            className={`chip ${levelFilter === lv ? 'active' : ''}`}
+            onClick={() => setLevelFilter(lv)}
+          >
             {LEVEL_NAMES[i]}
           </div>
         ))}
       </div>
 
-      <div className="page-content" style={{ paddingTop:8 }}>
-        {error && <div className="message error">{error}</div>}
-        {!user.gender && (
-          <div className="message info">Genre non défini sur votre profil — vous ne pouvez pas rejoindre d'équipe.</div>
-        )}
+      {/* Ensuite le reste de ton contenu (messages, boutons, teams...) */}
+      {error && <div className="message error">{error}</div>}
+      {!user.gender && (
+        <div className="message info">
+          Genre non défini sur votre profil — vous ne pouvez pas rejoindre d'équipe.
+        </div>
+      )}
 
-        {/* Create team button / form */}
-        {!myTeam && !showCreateTeam && user.gender && (
-          <button style={{ width:'100%', marginBottom:12 }}
-            onClick={() => setShowCreateTeam(true)}>+ Créer une équipe</button>
-        )}
-        {showCreateTeam && (
-          <div className="create-team-form">
-            <form onSubmit={handleCreateTeam}>
-              <div className="form-group">
-                <label>Nom de votre équipe</label>
-                <input type="text" value={newTeamName} onChange={e => setNewTeamName(e.target.value)}
-                  placeholder="ex: Les Volcans" required autoFocus />
-              </div>
-              <div style={{ display:'flex', gap:'8px' }}>
-                <button type="submit" disabled={actionLoading}>{actionLoading ? 'Création…' : 'Créer et rejoindre'}</button>
-                <button type="button" className="button-secondary"
-                  onClick={() => { setShowCreateTeam(false); setNewTeamName(''); }}>Annuler</button>
-              </div>
-            </form>
-          </div>
-        )}
+      {/* Create team button / form */}
+      {!myTeam && !showCreateTeam && user.gender && (
+        <button style={{ width:'100%', marginBottom:12 }}
+          onClick={() => setShowCreateTeam(true)}
+        >
+          + Créer une équipe
+        </button>
+      )}
 
-        {/* My team */}
-        {myFilteredTeam && (
-          <>
-            <div className="section-label" style={{ color:'var(--primary)' }}>Mon équipe</div>
-            <TeamCard team={myFilteredTeam} isMyTeam={true} user={user} tournament={tournament}
-              renamingTeamId={renamingTeamId} renameValue={renameValue}
-              setRenamingTeamId={setRenamingTeamId} setRenameValue={setRenameValue}
-              onJoin={handleJoinTeam} onLeave={handleLeaveTeam}
-              onDelete={handleDeleteTeam} onRename={handleRenameTeam}
-              actionLoading={actionLoading} myTeam={myTeam} />
-          </>
-        )}
+      {showCreateTeam && (
+        <div className="create-team-form">
+          <form onSubmit={handleCreateTeam}>
+            <div className="form-group">
+              <label>Nom de votre équipe</label>
+              <input
+                type="text"
+                value={newTeamName}
+                onChange={e => setNewTeamName(e.target.value)}
+                placeholder="ex: Les Volcans"
+                required
+                autoFocus
+              />
+            </div>
+            <div style={{ display:'flex', gap:'8px' }}>
+              <button type="submit" disabled={actionLoading}>
+                {actionLoading ? 'Création…' : 'Créer et rejoindre'}
+              </button>
+              <button type="button" className="button-secondary"
+                onClick={() => { setShowCreateTeam(false); setNewTeamName(''); }}
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
-        {/* Other teams */}
-        {otherTeams.length > 0 && (
-          <>
-            <div className="section-label">Autres équipes ({otherTeams.length})</div>
-            {otherTeams.map(team => (
-              <TeamCard key={team.id} team={team} isMyTeam={false} user={user} tournament={tournament}
-                renamingTeamId={renamingTeamId} renameValue={renameValue}
-                setRenamingTeamId={setRenamingTeamId} setRenameValue={setRenameValue}
-                onJoin={handleJoinTeam} onLeave={handleLeaveTeam}
-                onDelete={handleDeleteTeam} onRename={handleRenameTeam}
-                actionLoading={actionLoading} myTeam={myTeam} />
-            ))}
-          </>
-        )}
+      {/* My team */}
+      {myFilteredTeam && (
+        <>
+          <div className="section-label" style={{ color:'var(--primary)' }}>Mon équipe</div>
+          <TeamCard
+            team={myFilteredTeam}
+            isMyTeam={true}
+            user={user}
+            tournament={tournament}
+            renamingTeamId={renamingTeamId}
+            renameValue={renameValue}
+            setRenamingTeamId={setRenamingTeamId}
+            setRenameValue={setRenameValue}
+            onJoin={handleJoinTeam}
+            onLeave={handleLeaveTeam}
+            onDelete={handleDeleteTeam}
+            onRename={handleRenameTeam}
+            actionLoading={actionLoading}
+            myTeam={myTeam}
+          />
+        </>
+      )}
 
-        {filteredTeams.length === 0 && teams.length > 0 && (
-          <div className="empty-state" style={{ padding:'30px 0' }}>
-            <div className="empty-icon">🔍</div>
-            <p className="empty-text">Aucune équipe correspondante</p>
-          </div>
-        )}
-        {teams.length === 0 && (
-          <div className="empty-state" style={{ padding:'30px 0' }}>
-            <div className="empty-icon">🏐</div>
-            <p className="empty-text">Aucune équipe pour le moment</p>
-            <p style={{ fontSize:12, color:'#B0C0D0', marginTop:6 }}>Soyez le premier !</p>
-          </div>
-        )}
-      </div>
+      {/* Other teams */}
+      {otherTeams.length > 0 && (
+        <>
+          <div className="section-label">Autres équipes ({otherTeams.length})</div>
+          {otherTeams.map(team => (
+            <TeamCard
+              key={team.id}
+              team={team}
+              isMyTeam={false}
+              user={user}
+              tournament={tournament}
+              renamingTeamId={renamingTeamId}
+              renameValue={renameValue}
+              setRenamingTeamId={setRenamingTeamId}
+              setRenameValue={setRenameValue}
+              onJoin={handleJoinTeam}
+              onLeave={handleLeaveTeam}
+              onDelete={handleDeleteTeam}
+              onRename={handleRenameTeam}
+              actionLoading={actionLoading}
+              myTeam={myTeam}
+            />
+          ))}
+        </>
+      )}
+
+      {filteredTeams.length === 0 && teams.length > 0 && (
+        <div className="empty-state" style={{ padding:'30px 0' }}>
+          <div className="empty-icon">🔍</div>
+          <p className="empty-text">Aucune équipe correspondante</p>
+        </div>
+      )}
+
+      {teams.length === 0 && (
+        <div className="empty-state" style={{ padding:'30px 0' }}>
+          <div className="empty-icon">🏐</div>
+          <p className="empty-text">Aucune équipe pour le moment</p>
+          <p style={{ fontSize:12, color:'#B0C0D0', marginTop:6 }}>Soyez le premier !</p>
+        </div>
+      )}
+
+    </div>
 
       {/* FAB — create team */}
       {!myTeam && !showCreateTeam && user.gender && (
