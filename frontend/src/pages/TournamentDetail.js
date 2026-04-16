@@ -3,8 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const GENDER_LABELS = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
-const GENDER_BADGE  = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
+const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
+const GENDER_BADGE   = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
+const SURFACE_LABELS = { green: '🌿 Green', beach: '🏖️ Beach', gymnase: '🏛️ Gymnase' };
+const SURFACE_BADGE  = { green: 'badge-green', beach: 'badge-yellow', gymnase: 'badge-purple' };
 
 function getJoinBlockReason(user, tournament, team) {
   if (!user.gender) return 'Genre non défini sur votre profil';
@@ -185,6 +187,11 @@ function TournamentDetail({ user }) {
           <span className={`badge ${GENDER_BADGE[tournament.gender] || 'badge-grey'}`}>
             {GENDER_LABELS[tournament.gender] || tournament.gender}
           </span>
+          {tournament.surface && (
+            <span className={`badge ${SURFACE_BADGE[tournament.surface] || 'badge-grey'}`}>
+              {SURFACE_LABELS[tournament.surface]}
+            </span>
+          )}
           {tournament.price > 0
             ? <span className="badge badge-yellow">{tournament.price}€</span>
             : <span className="badge badge-green">Gratuit</span>}
@@ -385,8 +392,11 @@ function TeamCard({ team, isMyTeam, user, tournament, renamingTeamId, renameValu
       <div style={{ display:'flex', flexWrap:'wrap', gap:'6px', marginBottom:'8px' }}>
         {team.memberDetails.map(member => (
           <div key={member.id} style={{ display:'flex', alignItems:'center', gap:'5px' }}>
-            <div className={`av-circle av-sm ${avatarColor(member.id)}`}>
-              {initials(member.firstName, member.lastName)}
+            <div className={`av-circle av-sm ${!member.avatarUrl ? avatarColor(member.id) : ''}`}>
+              {member.avatarUrl
+                ? <img src={member.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                : initials(member.firstName, member.lastName)
+              }
             </div>
             <span style={{ fontSize:12, color:'#445' }}>
               {member.firstName} {member.lastName}{member.id === user.id ? ' (moi)' : ''}

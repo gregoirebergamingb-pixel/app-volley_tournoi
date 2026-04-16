@@ -125,7 +125,7 @@ function verifyToken(req, res, next) {
 // Inscription
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, gender, phone, level } = req.body;
+    const { email, password, firstName, lastName, gender, phone, level, avatarUrl } = req.body;
 
     if (!email || !password || !firstName || !lastName || !gender || !level) {
       return res.status(400).json({ error: 'Email, mot de passe, prénom, nom, genre et niveau requis' });
@@ -148,6 +148,7 @@ app.post('/api/auth/register', async (req, res) => {
     await db.collection('users').doc(userId).set({
       id: userId, email, password: hashedPassword, firstName, lastName, gender, level,
       phone: phone || '',
+      avatarUrl: avatarUrl || null,
       createdAt: new Date(), groups: [], tournaments: []
     });
 
@@ -155,7 +156,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.json({
       message: 'Inscription réussie!',
       token, userId,
-      user: { id: userId, email, firstName, lastName, gender, level, phone: phone || '' }
+      user: { id: userId, email, firstName, lastName, gender, level, phone: phone || '', avatarUrl: avatarUrl || null }
     });
   } catch (error) {
     console.error('Erreur inscription:', error);
@@ -186,7 +187,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({
       message: 'Connexion réussie!',
       token, userId: user.id,
-      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, gender: user.gender, level: user.level }
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, gender: user.gender, level: user.level, avatarUrl: user.avatarUrl || null }
     });
   } catch (error) {
     console.error('Erreur connexion:', error);
@@ -200,7 +201,7 @@ app.get('/api/auth/profile', verifyToken, async (req, res) => {
     const userDoc = await db.collection('users').doc(req.userId).get();
     if (!userDoc.exists) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     const u = userDoc.data();
-    res.json({ id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, gender: u.gender, level: u.level, phone: u.phone });
+    res.json({ id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, gender: u.gender, level: u.level, phone: u.phone, avatarUrl: u.avatarUrl || null });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -232,7 +233,8 @@ app.get('/api/users/me/teams', verifyToken, async (req, res) => {
               id: tournament.id, name: tournament.name, date: tournament.date,
               time: tournament.time, location: tournament.location,
               playerFormat: tournament.playerFormat, gender: tournament.gender,
-              groupId: tournament.groupId
+              groupId: tournament.groupId, surface: tournament.surface || null,
+              price: tournament.price || 0
             },
             group: { id: group.id, name: group.name }
           });
@@ -272,7 +274,7 @@ app.get('/api/users/me/tournaments', verifyToken, async (req, res) => {
             id: tournament.id, name: tournament.name, date: tournament.date,
             time: tournament.time, location: tournament.location,
             playerFormat: tournament.playerFormat, gender: tournament.gender,
-            price: tournament.price || 0
+            price: tournament.price || 0, surface: tournament.surface || null
           },
           group: { id: group.id, name: group.name },
           myTeam: myTeam ? { id: myTeam.id, name: myTeam.name, members: myTeam.members, maxSize: myTeam.maxSize } : null,
@@ -406,17 +408,18 @@ app.delete('/api/groups/:groupId', verifyToken, async (req, res) => {
 // Créer un tournoi
 app.post('/api/tournaments', verifyToken, async (req, res) => {
   try {
-    const { groupId, name, date, time, location, price, playerFormat, gender } = req.body;
+    const { groupId, name, date, time, location, price, playerFormat, gender, surface } = req.body;
 
     if (!groupId || !name || !date || !location) {
       return res.status(400).json({ error: 'Informations incomplètes (groupId, name, date, location requis)' });
     }
 
-    const validFormats = ['2x2', '3x3', '4x4'];
+    const validFormats = ['2x2', '3x3', '4x4', '6x6'];
     const validGenders = ['mix', 'masculin', 'feminin'];
+    const validSurfaces = ['green', 'beach', 'gymnase'];
 
     if (!playerFormat || !validFormats.includes(playerFormat)) {
-      return res.status(400).json({ error: 'Format invalide (2x2, 3x3 ou 4x4)' });
+      return res.status(400).json({ error: 'Format invalide (2x2, 3x3, 4x4 ou 6x6)' });
     }
     if (!gender || !validGenders.includes(gender)) {
       return res.status(400).json({ error: 'Genre invalide (mix, masculin ou feminin)' });
@@ -434,6 +437,7 @@ app.post('/api/tournaments', verifyToken, async (req, res) => {
       id: tournamentId, groupId, name, date,
       time: time || '10:00', location,
       price: price || 0, playerFormat, gender, teamSize,
+      surface: validSurfaces.includes(surface) ? surface : null,
       creator: req.userId, createdAt: new Date()
     });
 
@@ -554,7 +558,7 @@ app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) =
       return res.status(400).json({ error: eligibility.reason });
     }
 
-    const newMemberDetails = [{ id: req.userId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level }];
+    const newMemberDetails = [{ id: req.userId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level, avatarUrl: userData.avatarUrl || null }];
     const { averageLevel, averageLevelLabel } = computeAverageLevel(newMemberDetails);
 
     const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc();
@@ -629,7 +633,7 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/join', verifyToken, async
       return res.status(400).json({ error: eligibility.reason });
     }
 
-    const updatedDetails = [...teamData.memberDetails, { id: req.userId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level }];
+    const updatedDetails = [...teamData.memberDetails, { id: req.userId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level, avatarUrl: userData.avatarUrl || null }];
     const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
     await teamRef.update({
       members: [...teamData.members, req.userId],

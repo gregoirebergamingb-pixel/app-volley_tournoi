@@ -5,8 +5,10 @@ import AvatarMenu from '../components/AvatarMenu';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const GENDER_LABELS = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
-const GENDER_BADGE  = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
+const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
+const GENDER_BADGE   = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
+const SURFACE_LABELS = { green: '🌿 Green', beach: '🏖️ Beach', gymnase: '🏛️ Gymnase' };
+const SURFACE_BADGE  = { green: 'badge-green', beach: 'badge-yellow', gymnase: 'badge-purple' };
 const AV_COLORS = ['av-blue','av-pink','av-green','av-orange','av-purple','av-teal','av-red','av-indigo'];
 
 function avatarColor(id) {
@@ -155,8 +157,10 @@ function TournamentCard({ entry, userId, past }) {
     ? new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
     : '';
   const formatLabel  = tournament.playerFormat || tournament.format || '';
-  const genderLabel  = GENDER_LABELS[tournament.gender] || '';
-  const genderBadge  = GENDER_BADGE[tournament.gender]  || 'badge-grey';
+  const genderLabel  = GENDER_LABELS[tournament.gender]  || '';
+  const genderBadge  = GENDER_BADGE[tournament.gender]   || 'badge-grey';
+  const surfaceLabel = SURFACE_LABELS[tournament.surface] || '';
+  const surfaceBadge = SURFACE_BADGE[tournament.surface]  || '';
   const countdown    = daysUntil(tournament.date);
 
   // Show up to 4 member avatars + overflow
@@ -175,6 +179,7 @@ function TournamentCard({ entry, userId, past }) {
             <div className="t-card-badges">
               {formatLabel  && <span className="badge badge-blue">{formatLabel}</span>}
               {genderLabel  && <span className={`badge ${genderBadge}`}>{genderLabel}</span>}
+              {surfaceLabel && <span className={`badge ${surfaceBadge}`}>{surfaceLabel}</span>}
               {tournament.price > 0
                 ? <span className="badge badge-yellow">{tournament.price}€</span>
                 : <span className="badge badge-green">Gratuit</span>}
@@ -196,8 +201,11 @@ function TournamentCard({ entry, userId, past }) {
           <div className="team-section-row">
             <div className="av-stack">
               {visible.map(m => (
-                <div key={m.id} className={`av-circle av-sm ${avatarColor(m.id)}`}>
-                  {initials(m.firstName, m.lastName)}
+                <div key={m.id} className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}>
+                  {m.avatarUrl
+                    ? <img src={m.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : initials(m.firstName, m.lastName)
+                  }
                 </div>
               ))}
               {overflow > 0 && (

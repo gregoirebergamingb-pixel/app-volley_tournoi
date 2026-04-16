@@ -4,6 +4,25 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
+function resizeImage(file, size) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      const ox = (img.width - s) / 2;
+      const oy = (img.height - s) / 2;
+      ctx.drawImage(img, ox, oy, s, s, 0, 0, size, size);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = url;
+  });
+}
+
 function Register({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,11 +32,23 @@ function Register({ onLogin }) {
   const [gender, setGender] = useState('');
   const [level, setLevel] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [avatarBase64, setAvatarBase64] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get('code');
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const compressed = await resizeImage(file, 120);
+      setAvatarBase64(compressed);
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,7 +86,8 @@ function Register({ onLogin }) {
         lastName: lastName.trim(),
         gender,
         level,
-        phone
+        phone,
+        avatarUrl: avatarBase64 || null
       });
 
       onLogin(response.data.token, response.data.user);
@@ -72,6 +104,28 @@ function Register({ onLogin }) {
       <h2>Inscription</h2>
 
       {error && <div className="message error">{error}</div>}
+
+      {/* Avatar picker */}
+      <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
+        <label style={{ cursor:'pointer', display:'inline-block' }}>
+          <div style={{
+            width: 80, height: 80, borderRadius:'50%',
+            background: avatarBase64 ? 'transparent' : '#E3F2FD',
+            border: '2.5px solid #90CAF9',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            overflow:'hidden', margin:'0 auto 6px'
+          }}>
+            {avatarBase64
+              ? <img src={avatarBase64} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+              : <span style={{ fontSize:30 }}>📷</span>
+            }
+          </div>
+          <div style={{ fontSize:12, color:'var(--primary)', fontWeight:600 }}>
+            {avatarBase64 ? 'Changer la photo' : 'Ajouter une photo (optionnel)'}
+          </div>
+          <input type="file" accept="image/*" style={{ display:'none' }} onChange={handleAvatarChange} />
+        </label>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

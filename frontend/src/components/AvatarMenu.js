@@ -32,7 +32,10 @@ function AvatarMenu({ user, onLogout }) {
 
   return (
     <div ref={ref} className="header-avatar" onClick={() => setOpen(o => !o)}>
-      {initials}
+      {user?.avatarUrl
+        ? <img src={user.avatarUrl} alt={initials} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+        : initials
+      }
       {open && (
         <div className="avatar-menu">
           <div className="avatar-menu-item" style={{ fontWeight: 700, cursor: 'default' }}>

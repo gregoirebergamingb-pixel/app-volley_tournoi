@@ -14,6 +14,8 @@ const REQUIRED_FIELDS = [
   { key: 'gender',       label: 'Catégorie' },
 ];
 
+const SURFACE_LABELS = { green: '🌿 Green', beach: '🏖️ Beach', gymnase: '🏛️ Gymnase' };
+
 function CreateTournament({ user }) {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -26,7 +28,8 @@ function CreateTournament({ user }) {
     location: '',
     price: '',
     playerFormat: '',
-    gender: ''
+    gender: '',
+    surface: ''
   });
 
   // Autocomplete adresse (OpenStreetMap Nominatim — gratuit, sans clé API)
@@ -133,7 +136,8 @@ function CreateTournament({ user }) {
           location: formData.location.trim(),
           price: parseFloat(formData.price) || 0,
           playerFormat: formData.playerFormat,
-          gender: formData.gender
+          gender: formData.gender,
+          surface: formData.surface || null
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -258,6 +262,7 @@ function CreateTournament({ user }) {
                 <option value="2x2">2x2</option>
                 <option value="3x3">3x3</option>
                 <option value="4x4">4x4</option>
+                <option value="6x6">6x6</option>
               </select>
             </div>
 
@@ -275,6 +280,21 @@ function CreateTournament({ user }) {
                 <option value="feminin">Féminin</option>
               </select>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="surface">Surface</label>
+            <select
+              id="surface"
+              name="surface"
+              value={formData.surface}
+              onChange={handleChange}
+            >
+              <option value="">-- Choisir (optionnel) --</option>
+              {Object.entries(SURFACE_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
           </div>
 
           <p style={{ fontSize: 12, color: '#999', marginBottom: '1rem' }}>

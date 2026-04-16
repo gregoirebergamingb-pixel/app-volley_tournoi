@@ -3,8 +3,20 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const GENDER_LABELS = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
-const GENDER_BADGE  = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
+const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
+const GENDER_BADGE   = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
+const SURFACE_LABELS = { green: '🌿 Green', beach: '🏖️ Beach', gymnase: '🏛️ Gymnase' };
+const SURFACE_BADGE  = { green: 'badge-green', beach: 'badge-yellow', gymnase: 'badge-purple' };
+
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((new Date(dateStr) - today) / 86400000);
+  if (diff < 0)  return null;
+  if (diff === 0) return "Aujourd'hui";
+  if (diff === 1) return 'Demain';
+  if (diff < 8)  return `Dans ${diff}j`;
+  return null;
+}
 
 function GroupDetail({ user }) {
   const { groupId } = useParams();
@@ -204,7 +216,7 @@ function GroupDetail({ user }) {
             <div className="section-label">À venir</div>
             <div className="tournament-list">
               {upcoming.map(t => <TournamentRow key={t.id} t={t} isCreator={t.creator === user.id}
-                groupId={groupId} editingId={editingTournamentId} editData={editTournament}
+                editingId={editingTournamentId} editData={editTournament}
                 onEdit={startEditTournament} onSave={handleSaveTournament}
                 onDelete={handleDeleteTournament} onCancelEdit={() => setEditingTournamentId(null)}
                 onEditChange={v => setEditTournament(p => ({ ...p, ...v }))}
@@ -218,7 +230,7 @@ function GroupDetail({ user }) {
             <div className="section-label">Passés</div>
             <div className="tournament-list" style={{ opacity:0.65 }}>
               {past.map(t => <TournamentRow key={t.id} t={t} isCreator={t.creator === user.id}
-                groupId={groupId} editingId={editingTournamentId} editData={editTournament}
+                editingId={editingTournamentId} editData={editTournament}
                 onEdit={startEditTournament} onSave={handleSaveTournament}
                 onDelete={handleDeleteTournament} onCancelEdit={() => setEditingTournamentId(null)}
                 onEditChange={v => setEditTournament(p => ({ ...p, ...v }))}
@@ -231,9 +243,12 @@ function GroupDetail({ user }) {
   );
 }
 
-function TournamentRow({ t, isCreator, groupId, editingId, editData, onEdit, onSave, onDelete, onCancelEdit, onEditChange, actionLoading }) {
+function TournamentRow({ t, isCreator, editingId, editData, onEdit, onSave, onDelete, onCancelEdit, onEditChange, actionLoading }) {
   const navigate = useNavigate();
-  const genderBadge = GENDER_BADGE[t.gender] || 'badge-grey';
+  const genderBadge   = GENDER_BADGE[t.gender]   || 'badge-grey';
+  const surfaceBadge  = SURFACE_BADGE[t.surface]  || '';
+  const surfaceLabel  = SURFACE_LABELS[t.surface] || '';
+  const countdown     = daysUntil(t.date);
   const dateStr = t.date
     ? new Date(t.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
     : '';
@@ -274,24 +289,31 @@ function TournamentRow({ t, isCreator, groupId, editingId, editData, onEdit, onS
   }
 
   return (
-    <div className="tournament-row" style={{ cursor:'pointer' }}
+    <div className="t-card" style={{ cursor:'pointer' }}
       onClick={() => navigate(`/tournaments/${t.id}`)}>
-      <div className="tournament-row-info">
-        <h3>{t.name}</h3>
-        <p style={{ fontSize:12, color:'#90A0B0' }}>📅 {dateStr} · {t.time} · 📍 {t.location}</p>
-        <div style={{ display:'flex', gap:'5px', marginTop:'4px', flexWrap:'wrap' }}>
-          <span className="badge badge-blue">{t.playerFormat || t.format}</span>
-          <span className={`badge ${genderBadge}`}>{GENDER_LABELS[t.gender] || t.gender}</span>
-          {t.price > 0
-            ? <span className="badge badge-yellow">{t.price}€</span>
-            : <span className="badge badge-green">Gratuit</span>}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div className="t-card-name">{t.name}</div>
+          <div className="t-card-meta">📅 {dateStr} · {t.time}</div>
+          <div className="t-card-meta">📍 {t.location}</div>
+          <div className="t-card-badges">
+            <span className="badge badge-blue">{t.playerFormat || t.format}</span>
+            <span className={`badge ${genderBadge}`}>{GENDER_LABELS[t.gender] || t.gender}</span>
+            {surfaceLabel && <span className={`badge ${surfaceBadge}`}>{surfaceLabel}</span>}
+            {t.price > 0
+              ? <span className="badge badge-yellow">{t.price}€</span>
+              : <span className="badge badge-green">Gratuit</span>}
+          </div>
         </div>
+        {countdown && <span className="countdown">{countdown}</span>}
       </div>
       {isCreator && (
-        <div style={{ display:'flex', flexDirection:'column', gap:'5px', alignItems:'flex-end', flexShrink:0 }}
-          onClick={e => e.stopPropagation()}>
-          <button className="button-secondary btn-sm" onClick={() => onEdit(t)}>Modifier</button>
-          <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(t)}>Supprimer</button>
+        <div className="t-card-footer" onClick={e => e.stopPropagation()}>
+          <div style={{ display:'flex', gap:'6px' }}>
+            <button className="button-secondary btn-sm" onClick={() => onEdit(t)}>Modifier</button>
+            <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(t)}>Supprimer</button>
+          </div>
+          <span style={{ fontSize:11, color:'var(--primary)', fontWeight:600 }}>Voir →</span>
         </div>
       )}
     </div>
