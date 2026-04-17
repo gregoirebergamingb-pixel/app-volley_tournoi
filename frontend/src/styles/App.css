@@ -104,7 +104,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   color: white; font-weight: 800; font-size: 14px;
   cursor: pointer; flex-shrink: 0; position: relative;
-  user-select: none; overflow: hidden;
+  user-select: none;
 }
 .avatar-menu {
   position: absolute; top: calc(100% + 8px); right: 0;
