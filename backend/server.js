@@ -96,6 +96,13 @@ if (!JWT_SECRET) {
 //   - Tournoi mix : au moins une femme dans l'équipe quand elle est complète
 //     → la dernière place est bloquée si aucune femme (ni existante, ni la personne qui rejoint)
 // ============================================
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function checkGenderEligibility(userGender, tournamentGender, currentMemberDetails, teamSize) {
   if (tournamentGender === 'masculin' && userGender !== 'masculin') {
     return { allowed: false, reason: 'Ce tournoi est réservé aux hommes' };
@@ -505,7 +512,10 @@ app.delete('/api/groups/:groupId', verifyToken, async (req, res) => {
 // Recherche publique de tournois
 app.get('/api/tournaments/search', verifyToken, async (req, res) => {
   try {
-    const { q, format, gender, date, surface, region } = req.query;
+    const { q, format, gender, date, surface, region, lat, lng, radius } = req.query;
+    const searchLat    = lat    ? parseFloat(lat)    : null;
+    const searchLng    = lng    ? parseFloat(lng)    : null;
+    const searchRadius = radius ? parseFloat(radius) : 25;
 
     const snapshot = await db.collection('tournaments').get();
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -541,6 +551,12 @@ app.get('/api/tournaments/search', verifyToken, async (req, res) => {
       if (region) {
         const regionLow = region.toLowerCase();
         if (!(t.location || '').toLowerCase().includes(regionLow)) continue;
+      }
+
+      // Distance filter
+      if (searchLat && searchLng) {
+        if (!t.lat || !t.lng) continue;
+        if (haversineKm(searchLat, searchLng, t.lat, t.lng) > searchRadius) continue;
       }
 
       // Date filter
@@ -586,7 +602,7 @@ app.get('/api/tournaments/search', verifyToken, async (req, res) => {
 // Créer un tournoi
 app.post('/api/tournaments', verifyToken, async (req, res) => {
   try {
-    const { groupId, name, date, time, location, price, playerFormat, gender, surface } = req.body;
+    const { groupId, name, date, time, location, price, playerFormat, gender, surface, lat, lng } = req.body;
 
     if (!groupId || !name || !date || !location) {
       return res.status(400).json({ error: 'Informations incomplètes (groupId, name, date, location requis)' });
@@ -614,6 +630,8 @@ app.post('/api/tournaments', verifyToken, async (req, res) => {
     await db.collection('tournaments').doc(tournamentId).set({
       id: tournamentId, groupId, name, date,
       time: time || '10:00', location,
+      lat: lat ? parseFloat(lat) : null,
+      lng: lng ? parseFloat(lng) : null,
       price: price || 0, playerFormat, gender, teamSize,
       surface: validSurfaces.includes(surface) ? surface : null,
       creator: req.userId, createdAt: new Date()

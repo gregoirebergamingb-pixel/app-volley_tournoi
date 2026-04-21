@@ -69,6 +69,43 @@ function ExternalMembersEditor({ slots, onChange, maxSlots, label }) {
   );
 }
 
+function calDate(dateStr, timeStr) {
+  const [y, m, d] = dateStr.split('-');
+  const [h, min]  = (timeStr || '10:00').split(':');
+  return `${y}${m}${d}T${h.padStart(2,'0')}${(min||'00').padStart(2,'0')}00`;
+}
+function googleCalUrl(t) {
+  const start = calDate(t.date, t.time);
+  const endMs  = new Date(`${t.date}T${t.time||'10:00'}:00`).getTime() + 8*3600000;
+  const endD   = new Date(endMs);
+  const end    = calDate(endD.toISOString().split('T')[0], endD.toTimeString().slice(0,5));
+  const p = new URLSearchParams({
+    action: 'TEMPLATE', text: t.name,
+    dates: `${start}/${end}`,
+    location: t.location || '',
+    details: [t.playerFormat, GENDER_LABELS[t.gender], SURFACE_LABELS[t.surface]].filter(Boolean).join(' · ')
+  });
+  return `https://calendar.google.com/calendar/render?${p}`;
+}
+function buildICS(t) {
+  const start = calDate(t.date, t.time);
+  const endMs  = new Date(`${t.date}T${t.time||'10:00'}:00`).getTime() + 8*3600000;
+  const endD   = new Date(endMs);
+  const end    = calDate(endD.toISOString().split('T')[0], endD.toTimeString().slice(0,5));
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Tournoi Volley//FR',
+    'BEGIN:VEVENT',`DTSTART:${start}`,`DTEND:${end}`,
+    `SUMMARY:${t.name}`,`LOCATION:${(t.location||'').replace(/\n/g,'\\n')}`,
+    `DESCRIPTION:${[t.playerFormat,GENDER_LABELS[t.gender]].filter(Boolean).join(' - ')}`,
+    'END:VEVENT','END:VCALENDAR'].join('\r\n');
+}
+function downloadICS(t) {
+  const blob = new Blob([buildICS(t)], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${t.name.replace(/\s+/g,'-')}.ics`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
 function TournamentDetail({ user }) {
   const { tournamentId } = useParams();
   const token = localStorage.getItem('token');
@@ -83,8 +120,9 @@ function TournamentDetail({ user }) {
   const [renamingTeamId, setRenamingTeamId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [searchQ, setSearchQ]         = useState('');
-  const [levelFilter, setLevelFilter] = useState('all');
+  const [searchQ, setSearchQ]           = useState('');
+  const [levelFilters, setLevelFilters] = useState(new Set());
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Edit tournament
   const [editingTournament, setEditingTournament] = useState(false);
@@ -260,13 +298,21 @@ function TournamentDetail({ user }) {
     ? new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
     : '';
 
-  const LEVEL_LABELS = { loisir:'Loisir', departemental:'Départemental', regional:'Régional', national:'National', pro:'Pro' };
-  const LEVEL_FILTERS = ['all','loisir','departemental','regional','national','pro'];
-  const LEVEL_NAMES   = ['Tous', 'Loisir', 'Départ.', 'Régional', 'National', 'Pro'];
+  const LEVEL_KEYS  = ['loisir','departemental','regional','national','pro'];
+  const LEVEL_MAP   = { loisir:'Loisir', departemental:'Départemental', regional:'Régional', national:'National', pro:'Pro' };
+  const LEVEL_CHIPS = ['Loisir','Départ.','Régional','National','Pro'];
+
+  const toggleLevel = (lv) => setLevelFilters(prev => {
+    const next = new Set(prev);
+    if (next.has(lv)) next.delete(lv); else next.add(lv);
+    return next;
+  });
 
   const filteredTeams = teams.filter(t => {
-    const nameMatch = !searchQ || t.name.toLowerCase().includes(searchQ.toLowerCase());
-    const levelMatch = levelFilter === 'all' || (t.averageLevelLabel || '').toLowerCase() === (LEVEL_LABELS[levelFilter] || '').toLowerCase();
+    const nameMatch  = !searchQ || t.name.toLowerCase().includes(searchQ.toLowerCase());
+    const levelMatch = levelFilters.size === 0 || Array.from(levelFilters).some(
+      lv => (t.averageLevelLabel || '').toLowerCase() === (LEVEL_MAP[lv] || '').toLowerCase()
+    );
     return nameMatch && levelMatch;
   });
 
@@ -400,6 +446,30 @@ function TournamentDetail({ user }) {
               ? <span className="badge badge-yellow">{tournament.price}€</span>
               : <span className="badge badge-green">Gratuit</span>}
           </div>
+
+          {/* Add to calendar */}
+          <div style={{ position:'relative', display:'inline-block', marginBottom: 8 }}>
+            <button className="button-secondary btn-sm"
+              onClick={() => setShowCalendar(v => !v)}
+              style={{ fontSize:12 }}>
+              📅 Ajouter au calendrier
+            </button>
+            {showCalendar && (
+              <div style={{ position:'absolute', top:'100%', left:0, marginTop:4, background:'#fff',
+                border:'1px solid #E0E8F4', borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
+                zIndex:100, minWidth:180, overflow:'hidden' }}>
+                <a href={googleCalUrl(tournament)} target="_blank" rel="noreferrer"
+                  style={{ display:'block', padding:'10px 14px', fontSize:13, color:'#1565C0', textDecoration:'none', borderBottom:'1px solid #F0F4FF' }}
+                  onClick={() => setShowCalendar(false)}>
+                  🗓 Google Calendar
+                </a>
+                <button style={{ display:'block', width:'100%', textAlign:'left', padding:'10px 14px', fontSize:13, color:'#445', background:'none', border:'none', cursor:'pointer' }}
+                  onClick={() => { downloadICS(tournament); setShowCalendar(false); }}>
+                  📥 Apple / Outlook (.ics)
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -412,9 +482,12 @@ function TournamentDetail({ user }) {
       </div>
 
       <div className="chips-row">
-        {LEVEL_FILTERS.map((lv, i) => (
-          <div key={lv} className={`chip ${levelFilter === lv ? 'active' : ''}`} onClick={() => setLevelFilter(lv)}>
-            {LEVEL_NAMES[i]}
+        <div className={`chip ${levelFilters.size === 0 ? 'active' : ''}`}
+          onClick={() => setLevelFilters(new Set())}>Tous</div>
+        {LEVEL_KEYS.map((lv, i) => (
+          <div key={lv} className={`chip ${levelFilters.has(lv) ? 'active' : ''}`}
+            onClick={() => toggleLevel(lv)}>
+            {LEVEL_CHIPS[i]}
           </div>
         ))}
       </div>

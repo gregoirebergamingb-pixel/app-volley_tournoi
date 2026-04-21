@@ -414,6 +414,19 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #90A0B0; font-weight: 600; }
 .info-value { font-size: 14px; color: var(--text); font-weight: 600; }
 
+/* ── Skeleton loading ── */
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.sk-line, .sk-badge {
+  background: linear-gradient(90deg, #EEF2F8 25%, #DDE4F0 50%, #EEF2F8 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+.sk-badge { width: 52px; height: 20px; border-radius: 10px; display: inline-block; }
+
 /* ── Tournament cards (Groups / NosTournois / Search) ── */
 .t-card {
   background: white; border-radius: var(--radius-md); padding: 14px 16px;

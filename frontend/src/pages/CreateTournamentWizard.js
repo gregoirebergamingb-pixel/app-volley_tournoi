@@ -35,6 +35,8 @@ function CreateTournamentWizard({ user }) {
   const [date, setDate]             = useState('');
   const [time, setTime]             = useState('');
   const [location, setLocation]     = useState('');
+  const [locationLat, setLocationLat] = useState(null);
+  const [locationLng, setLocationLng] = useState(null);
   const [playerFormat, setPlayerFormat] = useState('');
   const [gender, setGender]         = useState('');
   const [surface, setSurface]       = useState('');
@@ -72,6 +74,7 @@ function CreateTournamentWizard({ user }) {
   const handleLocationInput = (e) => {
     const val = e.target.value;
     setLocation(val);
+    setLocationLat(null); setLocationLng(null);
     setShowSuggestions(false);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (val.length < 3) { setSuggestions([]); setLoadingAddress(false); return; }
@@ -115,6 +118,7 @@ function CreateTournamentWizard({ user }) {
       await axios.post(
         `${API_URL}/api/tournaments`,
         { groupId, name: name.trim(), date, time, location: location.trim(),
+          lat: locationLat, lng: locationLng,
           price: parseFloat(price) || 0, playerFormat, gender, surface: surface || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -206,7 +210,7 @@ function CreateTournamentWizard({ user }) {
               <ul className="address-suggestions">
                 {suggestions.map(s => (
                   <li key={s.place_id} className="address-suggestion-item"
-                    onMouseDown={() => { setLocation(s.display_name); setShowSuggestions(false); }}>
+                    onMouseDown={() => { setLocation(s.display_name); setLocationLat(parseFloat(s.lat)); setLocationLng(parseFloat(s.lon)); setShowSuggestions(false); }}>
                     <span className="suggestion-icon">📍</span>{s.display_name}
                   </li>
                 ))}

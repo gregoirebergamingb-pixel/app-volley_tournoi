@@ -328,6 +328,16 @@ function Groups({ user, onLogout }) {
               <h3 className="invite-sheet-title">Inviter dans<br />"{inviteGroup.name}"</h3>
               <p className="invite-sheet-subtitle">Partagez le lien — vos amis pourront rejoindre directement.</p>
             </div>
+            {/* QR Code */}
+            <div style={{ textAlign:'center', margin:'12px 0 8px' }}>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(getInviteUrl(inviteGroup.inviteCode))}&bgcolor=ffffff&color=1565C0&margin=6`}
+                alt="QR code d'invitation"
+                style={{ borderRadius:12, border:'1px solid #E0E8F4', width:160, height:160 }}
+              />
+              <div style={{ fontSize:11, color:'#90A0B0', marginTop:6 }}>Scanner pour rejoindre directement</div>
+            </div>
+
             <div className="invite-link-box">
               <input ref={inviteLinkRef} type="text" readOnly
                 value={getInviteUrl(inviteGroup.inviteCode)}

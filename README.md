@@ -1,205 +1,181 @@
-# 🏐 Volleyball Tournament Manager
+# 🏐 Volley Tournois
 
-Application web pour gérer vos tournois de volleyball en groupe.
+Application mobile-first pour organiser et suivre des tournois de volleyball entre amis et coéquipiers.
 
-## 📋 Fonctionnalités
+## À quoi ça sert ?
 
-- ✅ Authentification (inscription/connexion)
-- ✅ Création et gestion de groupes
-- ✅ Création de tournois
-- ✅ Inscription aux tournois
-- ✅ Calendrier des tournois
-- 🔜 Intégration Google Calendar
-- 🔜 Rappels SMS
+L'idée de base : vous jouez à des tournois de beach/green volley, vous vous inscrivez via d'autres canaux (FFVolley, organisateurs locaux…), et cette application sert à **organiser votre groupe** — qui joue avec qui, dans quelle équipe, à quelle date.
 
-## 🚀 Installation rapide (5 min)
+À terme, elle permettra aussi de **découvrir des tournois** publiés par d'autres groupes et de former des équipes avec des joueurs extérieurs.
+
+---
+
+## Fonctionnalités actuelles
+
+### Compte & Profil
+- Inscription avec prénom, nom, genre, niveau de jeu (Loisir → Pro), téléphone, photo de profil
+- Connexion sécurisée (JWT 30 jours)
+- Modification du profil et changement de mot de passe
+
+### Groupes
+- Créer un groupe (club, équipe d'amis…)
+- Inviter des membres via lien ou **QR code**
+- Rejoindre un groupe avec un code d'invitation
+- Gestion du groupe (renommer, supprimer, quitter)
+
+### Tournois
+- Créer un tournoi rattaché à un groupe (format, catégorie, surface, lieu, prix)
+- Modifier ou supprimer un tournoi (créateur uniquement)
+- Géolocalisation du lieu via autocomplétion OpenStreetMap
+- **Ajouter au calendrier** : Google Calendar ou fichier `.ics` (Apple / Outlook)
+
+### Équipes
+- Créer une équipe dans un tournoi, la renommer, la supprimer
+- Rejoindre / quitter une équipe
+- **Joueurs externes** : réserver des places pour des joueurs sans compte
+- Contrôle de parité mixte (dernière place réservée à une femme en mixte)
+- Niveau moyen de l'équipe calculé automatiquement
+
+### Tableau de bord
+- Vue de tous les tournois de vos groupes
+- Mise en avant du prochain tournoi
+- Filtres : À venir · Mes équipes · Ce week-end · Passés
+
+### Recherche
+- Recherche textuelle sur nom et lieu
+- Filtres : Format · Catégorie · Surface · Date
+- **Localisation par GPS** avec rayon configurable (10 / 25 / 50 / 100 km)
+
+---
+
+## Stack technique
+
+| Composant | Technologie |
+|-----------|------------|
+| Frontend | React 18, React Router, Axios |
+| Backend | Node.js, Express |
+| Base de données | Firebase Firestore |
+| Auth | JWT (bcrypt) |
+| Déploiement frontend | Netlify |
+| Déploiement backend | Render |
+| Géocodage | Nominatim (OpenStreetMap) |
+
+### Sécurité
+- Headers HTTP sécurisés (`helmet`)
+- Rate limiting sur les routes sensibles (`express-rate-limit`)
+- CORS restreint aux origines autorisées
+- Codes d'invitation cryptographiquement aléatoires (`crypto.randomBytes`)
+- Contrôle d'accès vérifié sur chaque route sensible
+
+---
+
+## Installation locale
 
 ### Prérequis
 
-- Node.js (v16+) - https://nodejs.org/
-- Git - https://git-scm.com/
-- Un compte Firebase gratuit - https://firebase.google.com/
+- Node.js v18+
+- Un projet Firebase avec Firestore activé
 
-### Étape 1 : Configuration Firebase
-
-1. Allez sur https://console.firebase.google.com/
-2. Créez un nouveau projet
-3. Activez Firestore Database
-4. Allez dans les paramètres du projet → Comptes de service
-5. Cliquez "Générer une nouvelle clé privée" (JSON)
-6. Téléchargez le fichier JSON
-
-### Étape 2 : Configuration du Backend
+### 1. Cloner le repo
 
 ```bash
-# Allez dans le dossier backend
+git clone <url-du-repo>
+cd volleyball-tournament-app
+```
+
+### 2. Configurer le backend
+
+```bash
 cd backend
-
-# Installez les dépendances
 npm install
-
-# Créez le fichier .env
 cp .env.example .env
-
-# Éditez le fichier .env avec vos données Firebase
-# Copiez les informations du fichier JSON téléchargé
 ```
 
-Voici comment remplir `.env` :
+Remplir `.env` avec les credentials Firebase (compte de service) et un `JWT_SECRET` fort :
 
 ```
-FIREBASE_TYPE=service_account
-FIREBASE_PROJECT_ID=votre-project-id (du JSON)
-FIREBASE_PRIVATE_KEY_ID=votre-key-id (du JSON)
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nVOTRE_KEY_ICI\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=votre-email@project.iam.gserviceaccount.com (du JSON)
-FIREBASE_CLIENT_ID=votre-client-id (du JSON)
-FIREBASE_DATABASE_URL=https://votre-project.firebaseio.com
-JWT_SECRET=votre-secret-super-secret-changez-ca
+FIREBASE_PROJECT_ID=...
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=...
+JWT_SECRET=votre-secret-fort-ici
 PORT=5000
-NODE_ENV=development
 ```
 
-### Étape 3 : Démarrage du Backend
+> Le fichier `.env` n'est pas dans le repo (`.gitignore`). Demandez-le à un membre de l'équipe.
+
+### 3. Lancer le backend
 
 ```bash
-# Depuis le dossier backend
-npm start
-
-# Vous devriez voir:
-# 🚀 Serveur démarré sur http://localhost:5000
+# depuis /backend
+node server.js
+# → 🚀 Serveur démarré sur http://localhost:5000
 ```
 
-### Étape 4 : Configuration du Frontend
+### 4. Lancer le frontend
 
 ```bash
-# Allez dans le dossier frontend
 cd ../frontend
-
-# Installez les dépendances
 npm install
-```
-
-### Étape 5 : Démarrage du Frontend
-
-```bash
-# Depuis le dossier frontend
 npm start
-
-# Cela ouvrira automatiquement http://localhost:3000 dans votre navigateur
+# → http://localhost:3000
 ```
 
-## 🧪 Test de l'application
+Le frontend se connecte automatiquement à `localhost:5000` si `REACT_APP_API_URL` n'est pas défini.
 
-1. **S'inscrire** : Cliquez sur "Créer un compte"
-   - Email : test@example.com
-   - Pseudo : Test
-   - Mot de passe : test123
+---
 
-2. **Créer un groupe** :
-   - Allez dans "Groupes"
-   - Cliquez "Créer un groupe"
-   - Notez le code d'invitation
-
-3. **Créer un tournoi** :
-   - Cliquez sur votre groupe
-   - Cliquez "+ Créer un tournoi"
-   - Remplissez les informations
-
-4. **Inviter des amis** :
-   - Partagez le code d'invitation
-   - Ils cliquent "Rejoindre un groupe" et entrent le code
-
-## 📱 Accès mobile
-
-L'application est responsive. Ouvrez simplement http://localhost:3000 sur votre téléphone (depuis le même WiFi):
-
-```
-http://votre-ip:3000
-```
-
-Pour trouver votre IP locale:
-- Windows: `ipconfig` dans Terminal
-- Mac/Linux: `ifconfig` dans Terminal
-
-## 🔧 Architecture
-
-```
-Frontend (React)
-    ↓ Requêtes HTTP
-Backend (Node.js + Express)
-    ↓ Queries
-Firestore (Google)
-```
-
-## 📚 Structure du projet
+## Structure du projet
 
 ```
 volleyball-tournament-app/
 ├── backend/
-│   ├── server.js          # Serveur Express principal
-│   ├── package.json       # Dépendances backend
-│   └── .env              # Configuration (à créer)
+│   ├── server.js          # API Express (auth, groupes, tournois, équipes)
+│   ├── .env               # Variables d'environnement (à créer, non versionné)
+│   └── .env.example       # Template des variables
 │
-├── frontend/
-│   ├── src/
-│   │   ├── pages/        # Pages React
-│   │   ├── components/   # Composants React
-│   │   ├── styles/       # CSS
-│   │   └── App.js        # Composant principal
-│   ├── public/index.html # HTML principal
-│   └── package.json      # Dépendances frontend
-│
-└── README.md
+└── frontend/
+    └── src/
+        ├── pages/
+        │   ├── Dashboard.js          # Accueil — mes tournois
+        │   ├── Groups.js             # Mes groupes + invitation QR
+        │   ├── GroupDetail.js        # Détail d'un groupe
+        │   ├── TournamentDetail.js   # Détail tournoi + équipes
+        │   ├── TournamentSearch.js   # Recherche publique + géoloc
+        │   ├── CreateTournamentWizard.js
+        │   ├── Profile.js
+        │   ├── Register.js
+        │   └── Login.js
+        ├── components/
+        │   ├── TournamentCard.js     # Carte tournoi réutilisable
+        │   ├── Navigation.js         # Bottom nav bar
+        │   └── AvatarMenu.js
+        └── styles/App.css
 ```
-
-## 🐛 Résolution des problèmes
-
-### "Cannot find module 'express'"
-```bash
-cd backend
-npm install
-```
-
-### "Error: ENOENT: no such file or directory"
-Assurez-vous d'être dans le bon dossier (backend ou frontend)
-
-### Port déjà utilisé
-```bash
-# Si le port 5000 est utilisé, changez PORT dans .env
-PORT=5001
-
-# Si le port 3000 est utilisé, changez avec:
-PORT=3001 npm start
-```
-
-### Erreur Firebase
-Vérifiez que vos identifiants `.env` sont corrects, surtout la `FIREBASE_PRIVATE_KEY` (doit contenir les sauts de ligne)
-
-## 🎯 Prochaines étapes
-
-Une fois que ça fonctionne:
-
-1. **Google Calendar** : Intégration pour exporter les tournois
-2. **SMS** : Rappels automatiques avec Twilio
-3. **Notifications** : Pushs quand quelqu'un rejoint
-4. **App Mobile** : Convertir en app Android/iOS native
-
-## 📖 Où trouver de l'aide
-
-- Erreurs Node.js : https://nodejs.org/en/docs/
-- React : https://react.dev/
-- Firebase : https://firebase.google.com/docs
-- Axios : https://axios-http.com/docs/intro
-
-## 💡 Tips
-
-- **Développement** : Gardez les 2 terminals ouverts (backend et frontend)
-- **Debugging** : Ouvrez les DevTools (F12) pour voir les erreurs
-- **Console** : Regardez les logs du backend pour voir les requêtes
 
 ---
 
-**Bon développement! 🚀**
+## Dépannage courant
 
-Des questions? N'hésitez pas!
+**"❌ ERREUR: JWT_SECRET non défini"**
+→ Votre `.env` ne contient pas `JWT_SECRET`. Ajoutez-le.
+
+**"❌ ERREUR: Les variables Firebase ne sont pas configurées"**
+→ Vérifiez que `FIREBASE_PROJECT_ID`, `FIREBASE_PRIVATE_KEY` et `FIREBASE_CLIENT_EMAIL` sont bien dans `.env`. La clé privée doit contenir les `\n` littéraux.
+
+**Port déjà utilisé**
+```bash
+# Backend sur un autre port
+PORT=5001 node server.js
+
+# Frontend sur un autre port
+PORT=3001 npm start
+```
+
+---
+
+## Idées pour la suite
+
+- **Chat par équipe** — messagerie temps réel via Firestore (évite d'échanger les numéros de téléphone)
+- **Profil public** — voir le niveau et l'historique d'un joueur
+- **Liste d'attente** — s'inscrire si une équipe est complète
+- **Confirmation de présence** — RSVP à J-7 pour éviter les désistements

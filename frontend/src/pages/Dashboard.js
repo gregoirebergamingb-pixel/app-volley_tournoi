@@ -55,6 +55,21 @@ function HeroCard({ entry }) {
   );
 }
 
+function SkeletonCard() {
+  return (
+    <div className="t-card" style={{ pointerEvents:'none' }}>
+      <div className="sk-line" style={{ width:'60%', height:15, marginBottom:10 }}></div>
+      <div className="sk-line" style={{ width:'45%', height:11, marginBottom:6 }}></div>
+      <div className="sk-line" style={{ width:'55%', height:11, marginBottom:12 }}></div>
+      <div style={{ display:'flex', gap:6 }}>
+        <div className="sk-badge"></div>
+        <div className="sk-badge"></div>
+        <div className="sk-badge"></div>
+      </div>
+    </div>
+  );
+}
+
 const CACHE_KEY = 'dashboard_entries_v1';
 
 function Dashboard({ user, onLogout }) {
@@ -140,7 +155,7 @@ function Dashboard({ user, onLogout }) {
       </div>
 
       <div className="page-content">
-        {loading && <p style={{ textAlign: 'center', color: '#90A0B0', padding: '2rem' }}>Chargement…</p>}
+        {loading && <><SkeletonCard /><SkeletonCard /><SkeletonCard /></>}
         {error   && <div className="message error">{error}</div>}
 
         {!loading && entries.length === 0 && (
