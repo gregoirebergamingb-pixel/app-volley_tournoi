@@ -4,7 +4,7 @@ REM Double-cliquez sur ce fichier pour démarrer l'application
 
 echo.
 echo ====================================
-echo   🏐 Volleyball Tournament Manager
+echo   Volleyball Tournament Manager
 echo ====================================
 echo.
 
@@ -17,40 +17,40 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo ✅ Node.js détecté
+echo Node.js detecte
 echo.
 
 REM Obtenir le répertoire du script
 set SCRIPT_DIR=%~dp0
 
 REM Lancer le backend dans une nouvelle fenêtre
-echo 🚀 Lancement du backend...
+echo Lancement du backend...
 start "Backend - Volleyball Tournament App" cmd /k "cd /d "%SCRIPT_DIR%backend" && npm start"
 
 REM Attendre 5 secondes pour que le backend démarre
 timeout /t 5 /nobreak
 
 REM Lancer le frontend dans une nouvelle fenêtre
-echo 🎨 Lancement du frontend...
+echo Lancement du frontend...
 start "Frontend - Volleyball Tournament App" cmd /k "cd /d "%SCRIPT_DIR%frontend" && npm start"
 
 REM Attendre 10 secondes pour que le frontend démarre
 timeout /t 10 /nobreak
 
 REM Ouvrir le navigateur
-echo 🌐 Ouverture du navigateur...
+echo Ouverture du navigateur...
 start http://localhost:3000
 
 echo.
 echo ====================================
-echo ✅ Application lancée!
+echo Application lancee!
 echo.
-echo 📌 Adresses:
+echo Adresses:
 echo   - Frontend:  http://localhost:3000
 echo   - Backend:   http://localhost:5000
 echo.
-echo 💡 Les deux fenêtres de terminal resteront ouvertes.
-echo    Fermer une fenêtre arrêtera le serveur correspondant.
+echo Les deux fenetres de terminal resteront ouvertes.
+echo Fermer une fenetre arrêtera le serveur correspondant.
 echo ====================================
 echo.
 

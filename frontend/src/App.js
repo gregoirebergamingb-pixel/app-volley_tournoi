@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Groups from './pages/Groups';
 import GroupDetail from './pages/GroupDetail';
 import CreateTournament from './pages/CreateTournament';
+import CreateTournamentWizard from './pages/CreateTournamentWizard';
 import TournamentDetail from './pages/TournamentDetail';
 import NosTournois from './pages/NosTournois';
 import TournamentSearch from './pages/TournamentSearch';
@@ -53,6 +54,11 @@ function App() {
     setUser(null);
   };
 
+  const handleUserUpdate = (updatedUser) => {
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   if (loading) return <div className="loading">Chargement…</div>;
 
   return (
@@ -74,8 +80,9 @@ function App() {
               <Route path="/groups/:groupId/tournament/create" element={<CreateTournament user={user} />} />
               <Route path="/tournaments/:tournamentId"         element={<TournamentDetail user={user} />} />
               <Route path="/nos-tournois"       element={<NosTournois      user={user} onLogout={handleLogout} />} />
+              <Route path="/creer"              element={<CreateTournamentWizard user={user} />} />
               <Route path="/recherche"          element={<TournamentSearch user={user} onLogout={handleLogout} />} />
-              <Route path="/profile"            element={<Profile          user={user} onLogout={handleLogout} />} />
+              <Route path="/profile"            element={<Profile          user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />} />
               <Route path="/rejoindre/:code"    element={<JoinGroup        user={user} />} />
               <Route path="/"                   element={<Navigate to="/dashboard" />} />
               <Route path="*"                   element={<Navigate to="/dashboard" />} />

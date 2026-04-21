@@ -11,13 +11,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "latest",
+    "bcryptjs": "latest",
     "cors": "latest",
     "dotenv": "latest",
+    "express": "latest",
+    "express-rate-limit": "^8.3.2",
     "firebase-admin": "latest",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "latest",
-    "bcryptjs": "latest",
     "twilio": "5.13.1"
   }
 }
-  

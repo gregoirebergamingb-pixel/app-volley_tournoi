@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mix Blue × Plage — Interactive Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET ─────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* ─── DESKTOP FRAME ─────────────────────────── */
+body {
+  min-height:100vh;
+  background: linear-gradient(145deg,#0d2b6b 0%,#1565C0 45%,#1e88e5 100%);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  padding:48px 20px 60px;
+  gap:0;
+}
+.page-title {
+  font-family:'Fraunces',serif; font-style:italic;
+  font-size:13px; font-weight:400; letter-spacing:.05em;
+  color:rgba(255,255,255,.45); margin-bottom:18px; text-align:center;
+}
+
+/* ─── PHONE ─────────────────────────────────── */
+.phone {
+  width:390px; height:844px;
+  background:#F5F8FF;
+  border-radius:48px;
+  overflow:hidden; position:relative;
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,.2),
+    0 0 0 9px rgba(0,0,0,.35),
+    0 0 0 10.5px rgba(255,255,255,.08),
+    0 60px 120px rgba(0,0,0,.5),
+    0 0 80px rgba(21,101,192,.3);
+}
+.notch {
+  position:absolute; top:13px; left:50%; transform:translateX(-50%);
+  width:122px; height:36px; background:#000; border-radius:22px; z-index:200;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.05);
+}
+
+/* ─── SCREENS ───────────────────────────────── */
+.screen {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+  transition:opacity .3s ease;
+  overflow:hidden;
+}
+.screen.active { opacity:1; pointer-events:all; }
+
+/* ─── SHARED: SCROLLABLE CONTENT ────────────── */
+.scroll-area {
+  flex:1; overflow-y:auto; scrollbar-width:none;
+}
+.scroll-area::-webkit-scrollbar{display:none;}
+
+/* ─── CSS VARIABLES ─────────────────────────── */
+:root {
+  --blue:       #1565C0;
+  --blue-dark:  #0D47A1;
+  --blue-light: #42A5F5;
+  --blue-pale:  #E3F2FD;
+  --bg:         #F5F8FF;
+  --white:      #ffffff;
+  --text:       #1A2440;
+  --muted:      #7A8FA8;
+  --border:     rgba(21,101,192,.1);
+  --radius:     20px;
+  --shadow:     0 4px 20px rgba(21,101,192,.12), 0 1px 4px rgba(0,0,0,.05);
+}
+
+/* ─── HEADER ────────────────────────────────── */
+.header {
+  background: linear-gradient(160deg, var(--blue-dark) 0%, var(--blue) 100%);
+  padding: 58px 22px 0;
+  flex-shrink:0; position:relative; overflow:hidden;
+}
+/* Subtle grid */
+.header::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.header-inner { position:relative; }
+.header-row { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:18px; }
+.greeting {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+  color:rgba(255,255,255,.55); margin-bottom:3px;
+}
+.h-name {
+  font-family:'Fraunces',serif;
+  font-size:34px; font-weight:700; line-height:1; color:#fff;
+  letter-spacing:-.01em;
+}
+.h-name em { font-style:italic; font-weight:400; color:rgba(255,255,255,.75); }
+.h-sub { font-size:12px; color:rgba(255,255,255,.5); margin-top:7px; font-weight:400; }
+.h-avatar {
+  width:46px; height:46px; border-radius:50%;
+  background:rgba(255,255,255,.15);
+  border:2px solid rgba(255,255,255,.4);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Fraunces',serif; font-size:17px; font-weight:700;
+  color:#fff; flex-shrink:0; cursor:pointer;
+  backdrop-filter:blur(8px);
+  transition:background .2s;
+}
+.h-avatar:hover { background:rgba(255,255,255,.25); }
+
+/* Wave */
+.wave { display:block; margin-bottom:-1px; }
+
+/* ─── SEARCH HEADER (Explorer) ──────────────── */
+.search-header {
+  background: linear-gradient(160deg, var(--blue-dark) 0%, var(--blue) 100%);
+  padding: 58px 22px 18px;
+  flex-shrink:0; position:relative; overflow:hidden;
+}
+.search-header::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.search-header-inner { position:relative; }
+.sh-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.sh-title {
+  font-family:'Fraunces',serif; font-size:28px; font-weight:700;
+  color:#fff; letter-spacing:-.01em;
+}
+.search-box {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,.15);
+  border:1.5px solid rgba(255,255,255,.25);
+  border-radius:14px; padding:10px 14px;
+  backdrop-filter:blur(8px);
+}
+.search-box input {
+  flex:1; background:transparent; border:none; outline:none;
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:500;
+  color:#fff; placeholder-color:rgba(255,255,255,.5);
+}
+.search-box input::placeholder { color:rgba(255,255,255,.45); }
+.search-icon { font-size:16px; flex-shrink:0; }
+
+/* ─── CHIPS ROW ─────────────────────────────── */
+.chips {
+  display:flex; gap:7px; padding:14px 20px;
+  background:var(--white); overflow-x:auto; flex-shrink:0;
+  scrollbar-width:none;
+  border-bottom:1px solid var(--border);
+}
+.chips::-webkit-scrollbar{display:none;}
+.chip {
+  padding:7px 16px; border-radius:30px;
+  font-size:12px; font-weight:600;
+  white-space:nowrap; flex-shrink:0; cursor:pointer;
+  transition:all .2s;
+}
+.chip.active { background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(21,101,192,.3); }
+.chip:not(.active) { background:var(--blue-pale); color:var(--blue); }
+.chip:not(.active):hover { background:#BBDEFB; }
+
+/* ─── SECTION LABEL ─────────────────────────── */
+.section-lbl {
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); display:flex; align-items:center; gap:8px;
+  margin:4px 0 12px; padding:0 4px;
+}
+.section-lbl::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ─── HERO CARD ─────────────────────────────── */
+.hero-card {
+  background: linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 60%,var(--blue-light) 100%);
+  border-radius:var(--radius); padding:18px; margin:0 18px 14px;
+  position:relative; overflow:hidden; cursor:pointer;
+  box-shadow: 0 8px 32px rgba(21,101,192,.35);
+  transition:transform .2s, box-shadow .2s;
+}
+.hero-card:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(21,101,192,.45); }
+.hero-card::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+.hero-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; position:relative; }
+.hero-group { display:flex; align-items:center; gap:5px; margin-bottom:6px; }
+.hero-group-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.6); }
+.hero-group-name { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.55); }
+.hero-name {
+  font-family:'Fraunces',serif; font-size:22px; font-weight:700;
+  color:#fff; line-height:1.15; flex:1;
+}
+.hero-countdown {
+  background:rgba(255,255,255,.2); border:1.5px solid rgba(255,255,255,.35);
+  color:#fff; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:20px; flex-shrink:0;
+  backdrop-filter:blur(8px);
+}
+.hero-countdown.urgent { background:rgba(255,200,0,.25); border-color:rgba(255,220,50,.5); color:#FFE566; }
+.hero-meta { font-size:12px; color:rgba(255,255,255,.6); display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; position:relative; }
+.hero-badges { display:flex; gap:5px; flex-wrap:wrap; position:relative; margin-bottom:14px; }
+.h-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; }
+.hb-blue { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.2); }
+.hb-teal { background:rgba(0,230,180,.15); color:#80FFD8; border:1px solid rgba(0,230,180,.2); }
+.hb-yellow { background:rgba(255,210,0,.15); color:#FFE066; border:1px solid rgba(255,210,0,.2); }
+
+/* Team section inside hero */
+.hero-team {
+  background:rgba(255,255,255,.1);
+  border-radius:12px; padding:10px 12px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:relative; border:1px solid rgba(255,255,255,.15);
+}
+.ht-left .ht-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.45); }
+.ht-left .ht-name { font-family:'Fraunces',serif; font-size:15px; font-weight:600; color:#fff; margin-top:1px; }
+.avs { display:flex; }
+.av {
+  width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:#fff;
+  border:2.5px solid var(--blue); margin-left:-8px;
+}
+.av:first-child{margin-left:0;}
+.av1{background:linear-gradient(135deg,#1976D2,#42A5F5);}
+.av2{background:linear-gradient(135deg,#D32F2F,#EF5350);}
+.av3{background:linear-gradient(135deg,#2E7D32,#66BB6A);}
+.av4{background:linear-gradient(135deg,#7B1FA2,#AB47BC);}
+.ave{background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.25);}
+.av-hero { border-color: rgba(21,101,192,.6); }
+
+.hero-cta {
+  margin-top:12px; position:relative;
+  background:#fff; color:var(--blue);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:13px; font-weight:700;
+  border:none; border-radius:12px; padding:11px;
+  width:100%; cursor:pointer;
+  transition:background .2s, transform .1s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.hero-cta:hover { background:#E3F2FD; transform:scale(.99); }
+
+/* ─── REGULAR CARD ───────────────────────────── */
+.t-card {
+  background:#fff; border-radius:var(--radius);
+  margin:0 18px 12px; overflow:hidden;
+  box-shadow:var(--shadow); cursor:pointer;
+  border:1.5px solid rgba(21,101,192,.08);
+  transition:transform .2s, box-shadow .2s;
+}
+.t-card:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(21,101,192,.18); }
+.card-line {
+  height:3px;
+  background:linear-gradient(90deg, var(--blue), var(--blue-light));
+}
+.card-line.g2 { background:linear-gradient(90deg,#2E7D32,#66BB6A); }
+.card-line.g3 { background:linear-gradient(90deg,#7B1FA2,#AB47BC); }
+.card-body { padding:13px 16px 10px; }
+.card-group-tag { display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+.group-dot { width:7px; height:7px; border-radius:50%; }
+.group-nm { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.card-name {
+  font-family:'Fraunces',serif; font-size:18px; font-weight:700;
+  color:var(--text); line-height:1.15; flex:1; letter-spacing:-.01em;
+}
+.countdown {
+  background:var(--blue-pale); color:var(--blue);
+  font-size:11px; font-weight:700;
+  padding:4px 10px; border-radius:20px; flex-shrink:0;
+  border:1px solid rgba(21,101,192,.15);
+}
+.countdown.d1 { background:linear-gradient(135deg,#FF6B35,#FF9A5C); color:#fff; border:none; }
+.card-meta { font-size:11px; color:var(--muted); margin-top:6px; display:flex; gap:12px; flex-wrap:wrap; }
+.badges { display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
+.badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; }
+.bb { background:#E3F2FD; color:var(--blue); }
+.bg { background:#F3E5F5; color:#7B1FA2; }
+.bs { background:#E8F5E9; color:#2E7D32; }
+.bp { background:#FFF8E1; color:#F57F17; }
+.bfr{ background:#E8F5E9; color:#2E7D32; }
+
+/* Team inside regular card */
+.card-team {
+  background:linear-gradient(135deg,#F0F7FF,#EBF5FF);
+  border-top:1px solid rgba(21,101,192,.08);
+  padding:10px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.ct-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue); opacity:.6; }
+.ct-name { font-family:'Fraunces',serif; font-size:14px; font-weight:600; color:var(--text); margin-top:1px; }
+
+.spots-row { display:flex; gap:3px; margin-top:5px; }
+.sp { width:6px; height:6px; border-radius:50%; }
+.sp.on { background:var(--blue); }
+.sp.off { background:rgba(21,101,192,.12); }
+
+.progress { height:3px; background:rgba(21,101,192,.08); border-radius:4px; margin:0 16px; }
+.progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--blue),var(--blue-light)); }
+
+.card-footer {
+  padding:8px 16px 12px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.cf-group { font-size:11px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+.cf-see { font-size:11px; font-weight:700; color:var(--blue); }
+
+/* ─── EXPLORER CARDS ────────────────────────── */
+.ex-card {
+  background:#fff; border-radius:var(--radius);
+  margin:0 18px 10px; overflow:hidden;
+  box-shadow:var(--shadow); cursor:pointer;
+  border:1.5px solid rgba(21,101,192,.08);
+  transition:transform .2s;
+}
+.ex-card:hover { transform:translateY(-1px); }
+.ex-card-body { padding:13px 16px 12px; }
+.ex-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.ex-name { font-family:'Fraunces',serif; font-size:17px; font-weight:700; color:var(--text); flex:1; line-height:1.15; }
+.ex-spots {
+  display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0;
+}
+.spots-count {
+  font-family:'Fraunces',serif; font-size:22px; font-weight:700; color:var(--blue); line-height:1;
+}
+.spots-label { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:1px; }
+.ex-meta { font-size:11px; color:var(--muted); margin-top:6px; display:flex; gap:12px; flex-wrap:wrap; }
+.ex-footer {
+  background:var(--blue-pale); padding:9px 16px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.ex-org { font-size:11px; color:var(--blue); font-weight:500; }
+.ex-btn {
+  background:var(--blue); color:#fff;
+  font-size:11px; font-weight:700;
+  padding:5px 14px; border-radius:20px; border:none; cursor:pointer;
+}
+
+/* ─── EMPTY STATE ───────────────────────────── */
+.empty {
+  display:flex; flex-direction:column; align-items:center;
+  padding:48px 24px; text-align:center;
+}
+.empty-icon { font-size:52px; margin-bottom:16px; }
+.empty-title { font-family:'Fraunces',serif; font-size:20px; font-weight:700; color:var(--text); margin-bottom:8px; }
+.empty-sub { font-size:13px; color:var(--muted); line-height:1.5; }
+
+/* ─── CREATE WIZARD ─────────────────────────── */
+.wizard-header {
+  background: linear-gradient(160deg, var(--blue-dark) 0%, var(--blue) 100%);
+  padding:58px 22px 22px; flex-shrink:0; position:relative; overflow:hidden;
+}
+.wizard-header::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.wh-inner { position:relative; }
+.wh-title { font-family:'Fraunces',serif; font-size:28px; font-weight:700; color:#fff; }
+.wh-sub { font-size:12px; color:rgba(255,255,255,.5); margin-top:6px; }
+
+/* Steps indicator */
+.steps {
+  display:flex; align-items:center; gap:0; margin-top:16px;
+}
+.step-item { display:flex; align-items:center; flex:1; }
+.step-dot {
+  width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0;
+  transition:all .3s;
+}
+.step-dot.done { background:#fff; color:var(--blue); }
+.step-dot.active { background:rgba(255,255,255,.2); border:2px solid #fff; color:#fff; }
+.step-dot.todo { background:rgba(255,255,255,.1); border:2px solid rgba(255,255,255,.2); color:rgba(255,255,255,.4); }
+.step-line { flex:1; height:2px; background:rgba(255,255,255,.2); margin:0 4px; }
+.step-line.done { background:rgba(255,255,255,.6); }
+.step-lbl { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:4px; text-align:center; }
+
+/* Form sections */
+.form-section {
+  background:#fff; border-radius:var(--radius);
+  margin:14px 18px 10px; padding:16px;
+  box-shadow:var(--shadow);
+}
+.form-section-title {
+  font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--blue); margin-bottom:14px; opacity:.7;
+}
+.form-group { margin-bottom:14px; }
+.form-group:last-child { margin-bottom:0; }
+.form-label { font-size:12px; font-weight:600; color:var(--text); margin-bottom:6px; display:block; }
+.form-input {
+  width:100%; padding:11px 13px;
+  border:1.5px solid rgba(21,101,192,.18);
+  border-radius:12px; font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:14px; color:var(--text); background:#fff; outline:none;
+  transition:border-color .2s;
+}
+.form-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(21,101,192,.08); }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* Format visual selector */
+.format-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.format-option {
+  border:2px solid rgba(21,101,192,.15);
+  border-radius:14px; padding:12px 8px;
+  text-align:center; cursor:pointer; transition:all .2s;
+}
+.format-option.sel { border-color:var(--blue); background:var(--blue-pale); }
+.format-icon { font-size:24px; display:block; margin-bottom:4px; }
+.format-label { font-size:11px; font-weight:700; color:var(--text); }
+.format-sub { font-size:9px; color:var(--muted); margin-top:2px; }
+
+/* Surface selector */
+.surface-opts { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.surface-opt {
+  border:2px solid rgba(21,101,192,.12); border-radius:12px;
+  padding:10px 6px; text-align:center; cursor:pointer; transition:all .2s;
+}
+.surface-opt.sel { border-color:var(--blue); background:var(--blue-pale); }
+.surface-opt .si { font-size:20px; }
+.surface-opt .sl { font-size:10px; font-weight:700; color:var(--text); margin-top:4px; }
+
+/* Submit button */
+.btn-primary {
+  background:var(--blue); color:#fff;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:14px; font-weight:700;
+  border:none; border-radius:14px; padding:14px;
+  width:calc(100% - 36px); margin:4px 18px 0;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 6px 20px rgba(21,101,192,.35);
+  transition:background .2s, transform .1s, box-shadow .2s;
+  flex-shrink:0;
+}
+.btn-primary:hover { background:var(--blue-dark); box-shadow:0 8px 24px rgba(21,101,192,.45); }
+.btn-primary:active { transform:scale(.98); }
+
+/* ─── BOTTOM NAV ────────────────────────────── */
+.nav {
+  background:#fff;
+  border-top:1.5px solid rgba(21,101,192,.1);
+  display:flex; padding:10px 0 32px; flex-shrink:0;
+  box-shadow:0 -4px 20px rgba(21,101,192,.07);
+  position:relative; z-index:10;
+}
+.ni {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  gap:3px; cursor:pointer; position:relative; padding-top:2px;
+}
+.ni-icon { font-size:22px; line-height:1; transition:transform .2s; }
+.ni-label { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; transition:color .2s; }
+.ni.on .ni-label { color:var(--blue); }
+.ni:not(.on) .ni-label { color:rgba(21,101,192,.35); }
+.ni:not(.on) .ni-icon { opacity:.3; }
+.ni.on .ni-icon { transform:scale(1.1); }
+/* Active dot */
+.ni.on::after {
+  content:''; position:absolute;
+  bottom:-10px; left:50%; transform:translateX(-50%);
+  width:20px; height:2px; border-radius:2px; background:var(--blue);
+}
+
+/* Create FAB (inside nav) */
+.ni-fab {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;
+}
+.ni-fab-circle {
+  width:44px; height:44px; border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--blue-light));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; line-height:1;
+  box-shadow:0 4px 16px rgba(21,101,192,.4);
+  margin-top:-22px;
+  border:3px solid #F5F8FF;
+  transition:transform .2s, box-shadow .2s;
+}
+.ni-fab-circle:hover { transform:scale(1.05); box-shadow:0 6px 20px rgba(21,101,192,.5); }
+.ni-fab-circle.on { background:linear-gradient(135deg,var(--blue-dark),var(--blue)); }
+.ni-fab-label { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.ni-fab.on .ni-fab-label { color:var(--blue); }
+.ni-fab:not(.on) .ni-fab-label { color:rgba(21,101,192,.35); }
+
+/* ─── MISC ───────────────────────────────────── */
+.past-section { opacity:.55; }
+.no-results { text-align:center; padding:32px 20px; color:var(--muted); font-size:13px; }
+
+.caption {
+  margin-top:24px; font-family:'Fraunces',serif; font-style:italic;
+  font-size:12px; font-weight:400; color:rgba(255,255,255,.35); text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="page-title">Mockup interactif — cliquer sur la navigation pour changer d'écran</div>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- ══════════════════════════════════════════
+       ÉCRAN 1 — ACCUEIL (Dashboard)
+  ══════════════════════════════════════════════ -->
+  <div class="screen active" id="s-home">
+    <div class="header">
+      <div class="header-inner">
+        <div class="header-row">
+          <div>
+            <div class="greeting">Bonjour,</div>
+            <div class="h-name">Lucas <em>B.</em></div>
+            <div class="h-sub">☀️ 3 tournois à venir</div>
+          </div>
+          <div class="h-avatar">LB</div>
+        </div>
+      </div>
+      <svg class="wave" viewBox="0 0 390 28" height="28" width="390" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <path d="M0,0 C80,28 160,28 230,12 C300,-4 340,8 390,18 L390,28 L0,28 Z" fill="#F5F8FF"/>
+      </svg>
+    </div>
+
+    <div class="chips">
+      <div class="chip active">Tous</div>
+      <div class="chip">À venir</div>
+      <div class="chip">Ce week-end</div>
+      <div class="chip">Passés</div>
+    </div>
+
+    <div class="scroll-area" style="padding-bottom:8px;">
+      <div style="padding:14px 0 0;">
+        <div class="section-lbl" style="padding:0 22px;">Prochain tournoi</div>
+
+        <!-- Hero card -->
+        <div class="hero-card">
+          <div class="hero-top">
+            <div>
+              <div class="hero-group">
+                <div class="hero-group-dot" style="background:#FFE566;"></div>
+                <div class="hero-group-name">Équipe Paris Sud</div>
+              </div>
+              <div class="hero-name">Open Beach Paris</div>
+            </div>
+            <div class="hero-countdown urgent">Demain</div>
+          </div>
+          <div class="hero-meta">
+            <span>📅 sam. 22 juin · 9h00</span>
+            <span>📍 Bercy Beach</span>
+          </div>
+          <div class="hero-badges">
+            <span class="h-badge hb-blue">4×4</span>
+            <span class="h-badge hb-teal">🏖️ Beach</span>
+            <span class="h-badge hb-blue">Mixte</span>
+            <span class="h-badge hb-yellow">12€</span>
+          </div>
+          <div class="hero-team">
+            <div class="ht-left">
+              <div class="ht-label">Mon équipe</div>
+              <div class="ht-name">Les Sabliers · 4/6</div>
+            </div>
+            <div class="avs">
+              <div class="av av-hero av1">LB</div>
+              <div class="av av-hero av2">MK</div>
+              <div class="av av-hero av3">SR</div>
+              <div class="av av-hero av4">JD</div>
+              <div class="av av-hero ave"></div>
+              <div class="av av-hero ave"></div>
+            </div>
+          </div>
+          <button class="hero-cta">👁️ Voir le tournoi</button>
+        </div>
+
+        <div class="section-lbl" style="padding:0 22px;">À venir</div>
+
+        <!-- Regular card -->
+        <div class="t-card">
+          <div class="card-line g2"></div>
+          <div class="card-body">
+            <div class="card-group-tag">
+              <div class="group-dot" style="background:#2E7D32;"></div>
+              <div class="group-nm">Club Vincennes</div>
+            </div>
+            <div class="card-top">
+              <div class="card-name">Tournoi d'Été Vincennes</div>
+              <div class="countdown">Dans 5j</div>
+            </div>
+            <div class="card-meta"><span>📅 jeu. 27 juin · 14h</span><span>📍 Vincennes</span></div>
+            <div class="badges">
+              <span class="badge bb">3×3</span>
+              <span class="badge bg">Masculin</span>
+              <span class="badge bs">🌿 Green</span>
+              <span class="badge bfr">Gratuit</span>
+            </div>
+          </div>
+          <div class="card-team">
+            <div>
+              <div class="ct-label">Mon équipe</div>
+              <div class="ct-name">Team Vincennes</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+              <div class="avs">
+                <div class="av av1">LB</div>
+                <div class="av av2">PL</div>
+                <div class="av ave"></div>
+              </div>
+              <div class="spots-row">
+                <div class="sp on"></div><div class="sp on"></div><div class="sp off"></div>
+              </div>
+            </div>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:66%"></div></div>
+          <div class="card-footer">
+            <div class="cf-group"><span style="width:6px;height:6px;border-radius:50%;background:#2E7D32;display:inline-block;"></span>Club Vincennes</div>
+            <div class="cf-see">Voir l'équipe →</div>
+          </div>
+        </div>
+
+        <div class="t-card">
+          <div class="card-line g3"></div>
+          <div class="card-body">
+            <div class="card-group-tag">
+              <div class="group-dot" style="background:#7B1FA2;"></div>
+              <div class="group-nm">Amis Charlety</div>
+            </div>
+            <div class="card-top">
+              <div class="card-name">Coupe Île-de-France</div>
+              <div class="countdown">Dans 12j</div>
+            </div>
+            <div class="card-meta"><span>📅 dim. 4 juil. · 10h</span><span>📍 Stade Charléty</span></div>
+            <div class="badges">
+              <span class="badge bb">2×2</span>
+              <span class="badge bg">Mixte</span>
+              <span class="badge bs">🏛️ Gymnase</span>
+              <span class="badge bp">8€</span>
+            </div>
+          </div>
+          <div class="card-team" style="background:linear-gradient(135deg,#F9F0FF,#F3E8FF);">
+            <div>
+              <div class="ct-label" style="color:#7B1FA2;">Mon équipe</div>
+              <div class="ct-name">Les Violets</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+              <div class="avs">
+                <div class="av av4">LB</div><div class="av av3">AC</div>
+              </div>
+              <div class="spots-row">
+                <div class="sp on" style="background:#7B1FA2;"></div>
+                <div class="sp on" style="background:#7B1FA2;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:100%;background:linear-gradient(90deg,#7B1FA2,#AB47BC)"></div></div>
+          <div class="card-footer">
+            <div class="cf-group"><span style="width:6px;height:6px;border-radius:50%;background:#7B1FA2;display:inline-block;"></span>Amis Charlety</div>
+            <div class="cf-see" style="color:#7B1FA2;">Voir l'équipe →</div>
+          </div>
+        </div>
+
+        <div class="past-section">
+          <div class="section-lbl" style="padding:0 22px;">Passés</div>
+          <div class="t-card">
+            <div class="card-body">
+              <div class="card-top">
+                <div class="card-name" style="font-size:16px;">Coupe Printemps 2024</div>
+                <span class="badge bg" style="align-self:flex-start;">Terminé</span>
+              </div>
+              <div class="card-meta"><span>📅 dim. 12 mai</span><span>📍 Charléty</span></div>
+              <div class="badges"><span class="badge bb">2×2</span><span class="badge bg">Mixte</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="ni on" onclick="show('home')"><div class="ni-icon">🏠</div><div class="ni-label">Accueil</div></div>
+      <div class="ni-fab" onclick="show('create')">
+        <div class="ni-fab-circle" id="fab-circle">➕</div>
+        <div class="ni-fab-label">Créer</div>
+      </div>
+      <div class="ni" onclick="show('explore')"><div class="ni-icon">🔍</div><div class="ni-label">Explorer</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       ÉCRAN 2 — EXPLORER (Search)
+  ══════════════════════════════════════════════ -->
+  <div class="screen" id="s-explore">
+    <div class="search-header">
+      <div class="search-header-inner">
+        <div class="sh-top">
+          <div class="sh-title">Explorer</div>
+          <div class="h-avatar">LB</div>
+        </div>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Nom, lieu, format…" id="search-input" oninput="filterResults(this.value)"/>
+        </div>
+      </div>
+      <svg viewBox="0 0 390 24" height="24" width="390" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;margin-bottom:-1px;">
+        <path d="M0,0 C100,24 200,24 280,10 C340,0 370,12 390,20 L390,24 L0,24 Z" fill="#F5F8FF"/>
+      </svg>
+    </div>
+
+    <div style="background:#fff;border-bottom:1px solid rgba(21,101,192,.1);padding:10px 20px;flex-shrink:0;">
+      <!-- Format row -->
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:8px;">
+        <div class="chip active" style="font-size:11px;">Tous les formats</div>
+        <div class="chip" style="font-size:11px;">2×2</div>
+        <div class="chip" style="font-size:11px;">3×3</div>
+        <div class="chip" style="font-size:11px;">4×4</div>
+      </div>
+      <!-- Secondary filters -->
+      <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">
+        <div class="chip" style="font-size:10px;padding:5px 12px;">🏖️ Beach</div>
+        <div class="chip" style="font-size:10px;padding:5px 12px;">🌿 Green</div>
+        <div class="chip" style="font-size:10px;padding:5px 12px;">📅 Ce week-end</div>
+        <div class="chip" style="font-size:10px;padding:5px 12px;">✨ Gratuit</div>
+      </div>
+    </div>
+
+    <div class="scroll-area" style="padding-top:14px;">
+      <div style="padding:0 18px 4px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);" id="results-count">24 tournois trouvés</div>
+        <div style="font-size:11px;color:var(--blue);font-weight:600;cursor:pointer;">Trier ↕</div>
+      </div>
+
+      <div id="results-list">
+        <div class="ex-card">
+          <div class="card-line"></div>
+          <div class="ex-card-body">
+            <div class="ex-top">
+              <div class="ex-name">Open Beach Paris</div>
+              <div class="ex-spots">
+                <div class="spots-count">4</div>
+                <div class="spots-label">places libres</div>
+              </div>
+            </div>
+            <div class="ex-meta"><span>📅 sam. 22 juin · 9h</span><span>📍 Bercy Beach</span></div>
+            <div class="badges" style="margin-top:8px;">
+              <span class="badge bb">4×4</span><span class="badge bg">Mixte</span>
+              <span class="badge bs">🏖️ Beach</span><span class="badge bp">12€</span>
+            </div>
+          </div>
+          <div class="ex-footer">
+            <div class="ex-org">🏐 Paris Plage Club · 6 équipes</div>
+            <button class="ex-btn">Voir →</button>
+          </div>
+        </div>
+
+        <div class="ex-card">
+          <div class="card-line g2"></div>
+          <div class="ex-card-body">
+            <div class="ex-top">
+              <div class="ex-name">Tournoi d'Été Vincennes</div>
+              <div class="ex-spots">
+                <div class="spots-count" style="color:#2E7D32;">3</div>
+                <div class="spots-label">places libres</div>
+              </div>
+            </div>
+            <div class="ex-meta"><span>📅 jeu. 27 juin · 14h</span><span>📍 Vincennes</span></div>
+            <div class="badges" style="margin-top:8px;">
+              <span class="badge bb">3×3</span><span class="badge bg">Masculin</span>
+              <span class="badge bs">🌿 Green</span><span class="badge bfr">Gratuit</span>
+            </div>
+          </div>
+          <div class="ex-footer" style="background:#E8F5E9;">
+            <div class="ex-org" style="color:#2E7D32;">🏐 Club Vincennes · 4 équipes</div>
+            <button class="ex-btn" style="background:#2E7D32;">Voir →</button>
+          </div>
+        </div>
+
+        <div class="ex-card">
+          <div class="card-line g3"></div>
+          <div class="ex-card-body">
+            <div class="ex-top">
+              <div class="ex-name">Coupe Île-de-France</div>
+              <div class="ex-spots">
+                <div class="spots-count" style="color:#7B1FA2;">8</div>
+                <div class="spots-label">places libres</div>
+              </div>
+            </div>
+            <div class="ex-meta"><span>📅 dim. 4 juil. · 10h</span><span>📍 Charléty</span></div>
+            <div class="badges" style="margin-top:8px;">
+              <span class="badge bb">2×2</span><span class="badge bg">Mixte</span>
+              <span class="badge bs">🏛️ Gymnase</span><span class="badge bp">8€</span>
+            </div>
+          </div>
+          <div class="ex-footer" style="background:#F3E5F5;">
+            <div class="ex-org" style="color:#7B1FA2;">🏐 Amis Charléty · 12 équipes</div>
+            <button class="ex-btn" style="background:#7B1FA2;">Voir →</button>
+          </div>
+        </div>
+
+        <div class="ex-card">
+          <div class="card-line" style="background:linear-gradient(90deg,#E65100,#FF7043)"></div>
+          <div class="ex-card-body">
+            <div class="ex-top">
+              <div class="ex-name">Grand Prix d'Automne</div>
+              <div class="ex-spots">
+                <div class="spots-count" style="color:#E65100;">12</div>
+                <div class="spots-label">places libres</div>
+              </div>
+            </div>
+            <div class="ex-meta"><span>📅 dim. 14 sept. · 9h</span><span>📍 Boulogne-sur-Mer</span></div>
+            <div class="badges" style="margin-top:8px;">
+              <span class="badge bb">4×4</span><span class="badge" style="background:#FBE9E7;color:#E65100;">Féminin</span>
+              <span class="badge bs">🏖️ Beach</span><span class="badge bp">15€</span>
+            </div>
+          </div>
+          <div class="ex-footer" style="background:#FBE9E7;">
+            <div class="ex-org" style="color:#E65100;">🏐 Côte d'Opale VB · 8 équipes</div>
+            <button class="ex-btn" style="background:#E65100;">Voir →</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="no-results" class="no-results" style="display:none;">
+        <div style="font-size:40px;margin-bottom:12px;">🔍</div>
+        <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;">Aucun résultat</div>
+        <div>Essayez d'autres termes ou filtres.</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="ni" onclick="show('home')"><div class="ni-icon">🏠</div><div class="ni-label">Accueil</div></div>
+      <div class="ni-fab" onclick="show('create')">
+        <div class="ni-fab-circle">➕</div>
+        <div class="ni-fab-label">Créer</div>
+      </div>
+      <div class="ni on" onclick="show('explore')"><div class="ni-icon">🔍</div><div class="ni-label">Explorer</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       ÉCRAN 3 — CRÉER (Wizard)
+  ══════════════════════════════════════════════ -->
+  <div class="screen" id="s-create">
+    <div class="wizard-header">
+      <div class="wh-inner">
+        <div class="wh-title">Créer un tournoi</div>
+        <div class="wh-sub">Remplissez les informations en 3 étapes</div>
+        <div class="steps" style="margin-top:16px;">
+          <div class="step-item">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot active" id="s1dot">1</div>
+              <div class="step-lbl">Infos</div>
+            </div>
+          </div>
+          <div class="step-line" id="l1"></div>
+          <div class="step-item">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot todo" id="s2dot">2</div>
+              <div class="step-lbl">Format</div>
+            </div>
+          </div>
+          <div class="step-line" id="l2"></div>
+          <div class="step-item">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div class="step-dot todo" id="s3dot">3</div>
+              <div class="step-lbl">Confirm.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <svg viewBox="0 0 390 24" height="24" width="390" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;margin-bottom:-1px;">
+        <path d="M0,8 C80,24 200,24 290,8 C350,-2 375,14 390,20 L390,24 L0,24 Z" fill="#F5F8FF"/>
+      </svg>
+    </div>
+
+    <div class="scroll-area">
+      <!-- Step 1: Basic info -->
+      <div id="step1" style="padding-bottom:8px;">
+        <div class="form-section">
+          <div class="form-section-title">Informations générales</div>
+          <div class="form-group">
+            <label class="form-label">Nom du tournoi</label>
+            <input class="form-input" type="text" placeholder="Ex: Open Beach Paris 2024">
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Date</label>
+              <input class="form-input" type="date">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Heure</label>
+              <input class="form-input" type="time" value="09:00">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Lieu</div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Adresse ou nom du site</label>
+            <input class="form-input" type="text" placeholder="Bercy Beach, Paris 75012">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Surface de jeu</div>
+          <div class="surface-opts">
+            <div class="surface-opt sel">
+              <div class="si">🏖️</div>
+              <div class="sl">Beach</div>
+            </div>
+            <div class="surface-opt">
+              <div class="si">🌿</div>
+              <div class="sl">Green</div>
+            </div>
+            <div class="surface-opt">
+              <div class="si">🏛️</div>
+              <div class="sl">Gymnase</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Format (hidden initially) -->
+      <div id="step2" style="display:none;padding-bottom:8px;">
+        <div class="form-section">
+          <div class="form-section-title">Format de jeu</div>
+          <div class="format-grid">
+            <div class="format-option sel">
+              <span class="format-icon">👫</span>
+              <div class="format-label">2×2</div>
+              <div class="format-sub">2 joueurs</div>
+            </div>
+            <div class="format-option">
+              <span class="format-icon">👨‍👩‍👦</span>
+              <div class="format-label">3×3</div>
+              <div class="format-sub">3 joueurs</div>
+            </div>
+            <div class="format-option">
+              <span class="format-icon">👥</span>
+              <div class="format-label">4×4</div>
+              <div class="format-sub">4 joueurs</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Catégorie</div>
+          <div style="display:flex;gap:8px;">
+            <div class="format-option sel" style="flex:1;">
+              <span class="format-icon">⚡</span>
+              <div class="format-label">Mixte</div>
+            </div>
+            <div class="format-option" style="flex:1;">
+              <span class="format-icon">♂️</span>
+              <div class="format-label">Masculin</div>
+            </div>
+            <div class="format-option" style="flex:1;">
+              <span class="format-icon">♀️</span>
+              <div class="format-label">Féminin</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Tarif</div>
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Prix (€)</label>
+              <input class="form-input" type="number" value="0" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Max. équipes</label>
+              <input class="form-input" type="number" value="16" min="2">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Confirm (hidden initially) -->
+      <div id="step3" style="display:none;padding-bottom:8px;">
+        <div style="margin:20px 18px 14px;background:linear-gradient(135deg,var(--blue-dark),var(--blue));border-radius:var(--radius);padding:20px;color:#fff;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:20px 20px;"></div>
+          <div style="position:relative;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px;">Aperçu du tournoi</div>
+            <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-bottom:8px;">Open Beach Paris</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.65);display:flex;flex-direction:column;gap:4px;">
+              <span>📅 sam. 22 juin · 9h00</span>
+              <span>📍 Bercy Beach, Paris 75012</span>
+              <span>🏖️ Beach · 2×2 · Mixte · Gratuit</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Options supplémentaires</div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Description (optionnel)</label>
+            <textarea class="form-input" rows="3" placeholder="Infos pratiques, règles particulières…" style="resize:none;height:auto;"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">Inscription libre</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">Tout le monde peut rejoindre une équipe</div>
+            </div>
+            <div style="width:42px;height:24px;background:var(--blue);border-radius:12px;position:relative;cursor:pointer;">
+              <div style="position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:0 18px 8px;padding:12px;background:var(--blue-pale);border-radius:12px;display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:20px;flex-shrink:0;">💡</span>
+          <div style="font-size:12px;color:var(--blue);line-height:1.5;">Un lien d'invitation sera généré automatiquement pour partager avec vos amis.</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="next-btn" onclick="nextStep()">
+      <span id="btn-text">Continuer →</span>
+    </button>
+
+    <div class="nav" style="margin-top:10px;">
+      <div class="ni" onclick="show('home')"><div class="ni-icon">🏠</div><div class="ni-label">Accueil</div></div>
+      <div class="ni-fab on" onclick="show('create')">
+        <div class="ni-fab-circle on">➕</div>
+        <div class="ni-fab-label">Créer</div>
+      </div>
+      <div class="ni" onclick="show('explore')"><div class="ni-icon">🔍</div><div class="ni-label">Explorer</div></div>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+
+<div class="caption">Mix Blue × Plage · Fraunces + Plus Jakarta Sans · 3 onglets — Accueil · Créer · Explorer</div>
+
+<script>
+/* ── Screen switching ── */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  if (id === 'create') resetWizard();
+}
+
+/* ── Wizard logic ── */
+let currentStep = 1;
+function resetWizard() {
+  currentStep = 1;
+  updateWizard();
+}
+function nextStep() {
+  if (currentStep < 3) {
+    currentStep++;
+    updateWizard();
+  } else {
+    // Submit — return to home
+    show('home');
+    resetWizard();
+  }
+}
+function updateWizard() {
+  // Show/hide step content
+  document.getElementById('step1').style.display = currentStep === 1 ? 'block' : 'none';
+  document.getElementById('step2').style.display = currentStep === 2 ? 'block' : 'none';
+  document.getElementById('step3').style.display = currentStep === 3 ? 'block' : 'none';
+  // Update dots
+  const dots = [document.getElementById('s1dot'), document.getElementById('s2dot'), document.getElementById('s3dot')];
+  const lines = [document.getElementById('l1'), document.getElementById('l2')];
+  dots.forEach((d, i) => {
+    d.className = 'step-dot';
+    if (i + 1 < currentStep) d.classList.add('done');
+    else if (i + 1 === currentStep) d.classList.add('active');
+    else d.classList.add('todo');
+    d.textContent = i + 1 < currentStep ? '✓' : (i + 1);
+  });
+  lines.forEach((l, i) => {
+    l.className = 'step-line' + (i + 1 < currentStep ? ' done' : '');
+  });
+  // Button text
+  document.getElementById('btn-text').textContent =
+    currentStep === 3 ? '🎉 Créer le tournoi' : 'Continuer →';
+}
+
+/* ── Search filter (Explorer) ── */
+function filterResults(val) {
+  const cards = document.querySelectorAll('#results-list .ex-card');
+  const noRes = document.getElementById('no-results');
+  const count = document.getElementById('results-count');
+  let visible = 0;
+  cards.forEach(c => {
+    const name = c.querySelector('.ex-name').textContent.toLowerCase();
+    const meta = c.querySelector('.ex-meta').textContent.toLowerCase();
+    const match = !val || name.includes(val.toLowerCase()) || meta.includes(val.toLowerCase());
+    c.style.display = match ? 'block' : 'none';
+    if (match) visible++;
+  });
+  noRes.style.display = visible === 0 ? 'block' : 'none';
+  count.textContent = visible + ' tournoi' + (visible !== 1 ? 's' : '') + ' trouvé' + (visible !== 1 ? 's' : '');
+}
+</script>
+</body>
+</html>

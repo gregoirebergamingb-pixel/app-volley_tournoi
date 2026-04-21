@@ -155,9 +155,11 @@ function CreateTournament({ user }) {
   return (
     <>
       <div className="app-header">
-        <Link to={`/groups/${groupId}`} className="back-btn">← Retour au groupe</Link>
-        <div className="header-row">
-          <div className="header-title">Créer un tournoi</div>
+        <div className="header-inner">
+          <Link to={`/groups/${groupId}`} className="back-btn">← Retour au groupe</Link>
+          <div className="header-row">
+            <div className="header-title">Créer un tournoi</div>
+          </div>
         </div>
       </div>
     <div className="container">

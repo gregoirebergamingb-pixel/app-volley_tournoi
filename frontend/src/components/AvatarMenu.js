@@ -19,16 +19,10 @@ function AvatarMenu({ user, onLogout }) {
   const initials = f && l ? (f[0] + l[0]).toUpperCase()
                  : f       ? f.slice(0, 2).toUpperCase()
                  : '?';
+  const displayName = f || l ? `${f} ${l}`.trim() : (user?.pseudo || '');
 
-  const displayName = f || l
-    ? `${f} ${l}`.trim()
-    : (user?.pseudo || '');
-
-  const handleLogout = () => {
-    setOpen(false);
-    onLogout();
-    navigate('/login');
-  };
+  const go = (path) => { setOpen(false); navigate(path); };
+  const handleLogout = () => { setOpen(false); onLogout(); navigate('/login'); };
 
   return (
     <div ref={ref} className="header-avatar" onClick={() => setOpen(o => !o)}>
@@ -38,12 +32,27 @@ function AvatarMenu({ user, onLogout }) {
       }
       {open && (
         <div className="avatar-menu">
-          <div className="avatar-menu-item" style={{ fontWeight: 700, cursor: 'default' }}>
-            👤 {displayName}
+          <div className="avatar-menu-item" style={{ fontWeight: 700, cursor: 'default', color: '#90A0B0', fontSize: 12 }}>
+            {displayName}
           </div>
-          <div className="avatar-menu-item" onClick={(e) => { e.stopPropagation(); setOpen(false); navigate('/profile'); }}>
+          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/profile'); }}>
             ⚙️ Mon profil
           </div>
+
+          <div className="avatar-menu-sep" />
+
+          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups'); }}>
+            👥 Mes groupes
+          </div>
+          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups?panel=create'); }}>
+            ➕ Créer un groupe
+          </div>
+          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups?panel=join'); }}>
+            🔗 Rejoindre un groupe
+          </div>
+
+          <div className="avatar-menu-sep" />
+
           <div className="avatar-menu-item danger" onClick={handleLogout}>
             🚪 Déconnexion
           </div>

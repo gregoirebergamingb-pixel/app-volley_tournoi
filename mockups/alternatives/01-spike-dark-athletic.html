@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPIKE — Dark Athletic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  min-height: 100vh;
+  background: #0d0d14;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 60%, rgba(255,75,0,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 85% 20%, rgba(255,120,0,.07) 0%, transparent 50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  padding: 48px 20px 56px;
+  gap: 0;
+}
+
+.design-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 11px;
+  letter-spacing: .2em;
+  color: rgba(255,255,255,.25);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.phone-wrap { position: relative; }
+
+.phone {
+  width: 390px;
+  height: 844px;
+  background: #090c15;
+  border-radius: 46px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,.07),
+    0 0 0 8px rgba(0,0,0,.5),
+    0 0 0 9px rgba(255,255,255,.04),
+    0 50px 100px rgba(0,0,0,.8),
+    0 0 80px rgba(255,75,0,.12);
+}
+
+/* dynamic island */
+.notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+
+.app { width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── HEADER ── */
+.header {
+  background: #0c1020;
+  padding: 64px 24px 18px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: 'VOLLEY';
+  position: absolute;
+  right: -8px;
+  bottom: -12px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 96px;
+  line-height: 1;
+  color: rgba(255,75,0,.06);
+  letter-spacing: .02em;
+  pointer-events: none;
+  user-select: none;
+}
+.header-stripe {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #FF4B00 0%, #FF8C00 40%, transparent 100%);
+}
+.header-row { display:flex; justify-content:space-between; align-items:flex-start; }
+.greeting { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.35); letter-spacing: .12em; text-transform: uppercase; }
+.name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 40px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: .04em;
+  margin-top: 2px;
+}
+.name em { color: #FF4B00; font-style: normal; }
+.sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 5px; }
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #FF4B00, #FF8C00);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 17px; color: #fff;
+  letter-spacing: .05em; flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255,75,0,.3);
+}
+
+/* ── CHIPS ── */
+.chips {
+  display: flex; gap: 6px;
+  padding: 12px 20px;
+  background: #090c15;
+  overflow-x: auto; flex-shrink: 0;
+  scrollbar-width: none; border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.chips::-webkit-scrollbar{display:none;}
+.chip {
+  padding: 5px 13px;
+  border-radius: 2px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  white-space: nowrap; flex-shrink: 0; cursor: pointer;
+}
+.chip.active { background: #FF4B00; color: #fff; }
+.chip:not(.active) { background: rgba(255,255,255,.05); color: rgba(255,255,255,.35); border: 1px solid rgba(255,255,255,.07); }
+
+/* ── CONTENT ── */
+.content { flex:1; overflow-y:auto; padding: 14px 20px; scrollbar-width:none; }
+.content::-webkit-scrollbar{display:none;}
+
+.section-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 11px; letter-spacing: .18em;
+  color: rgba(255,255,255,.25);
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; margin-top: 2px;
+}
+.section-label::after {
+  content:''; flex:1; height:1px;
+  background: rgba(255,255,255,.06);
+}
+
+/* ── CARD ── */
+.t-card {
+  background: #121726;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.05);
+  position: relative;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.t-card:hover { border-color: rgba(255,75,0,.3); }
+.t-card::before {
+  content: '';
+  position: absolute; left:0; top:0; bottom:0; width:3px;
+  background: linear-gradient(180deg, #FF4B00, #FF8C00);
+}
+
+.t-card-body { padding: 13px 14px 13px 18px; }
+.t-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.t-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 19px; color: #fff;
+  letter-spacing: .04em; line-height: 1.1; flex:1;
+}
+.countdown {
+  background: rgba(255,75,0,.12);
+  border: 1px solid rgba(255,75,0,.25);
+  color: #FF6622;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px; letter-spacing: .08em;
+  padding: 3px 8px; border-radius: 2px; flex-shrink:0;
+}
+.countdown.soon { background: rgba(255,75,0,.25); color: #FF4B00; }
+
+.t-meta { font-size: 11px; color: rgba(255,255,255,.3); margin-top:6px; display:flex; gap:14px; flex-wrap:wrap; }
+
+.badges { display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
+.badge {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 2px;
+}
+.bf { background:rgba(255,75,0,.1); color:#FF7744; border:1px solid rgba(255,75,0,.18); }
+.bg { background:rgba(60,120,255,.1); color:#7799FF; border:1px solid rgba(60,120,255,.18); }
+.bs { background:rgba(40,180,80,.1); color:#44CC77; border:1px solid rgba(40,180,80,.18); }
+.bp { background:rgba(255,200,0,.1); color:#FFCC33; border:1px solid rgba(255,200,0,.18); }
+.bfr { background:rgba(40,180,80,.1); color:#44CC77; border:1px solid rgba(40,180,80,.18); }
+
+/* Team section inside card */
+.t-team {
+  background: rgba(255,75,0,.04);
+  border-top: 1px solid rgba(255,75,0,.1);
+  padding: 9px 14px 9px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.team-left .tl { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,75,0,.6); }
+.team-left .tn { font-size:13px; font-weight:600; color:#fff; margin-top:2px; }
+
+.avs { display:flex; align-items:center; }
+.av {
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; color:#fff;
+  border:2px solid #121726; margin-left:-7px;
+}
+.av:first-child{margin-left:0;}
+.av1{background:linear-gradient(135deg,#FF4B00,#FF8C00);}
+.av2{background:linear-gradient(135deg,#3366FF,#6699FF);}
+.av3{background:linear-gradient(135deg,#00AA55,#44CC77);}
+.av4{background:linear-gradient(135deg,#CC2266,#FF4488);}
+.ave{background:rgba(255,255,255,.06);border:1.5px dashed rgba(255,255,255,.12);}
+
+.spots-row { display:flex; gap:3px; margin-top:4px; }
+.sp { width:5px; height:5px; border-radius:50%; }
+.sp.on { background:#FF4B00; }
+.sp.off { background:rgba(255,255,255,.1); }
+
+.progress { height:2px; background:rgba(255,255,255,.05); margin:0 18px; }
+.progress-fill { height:100%; background:linear-gradient(90deg,#FF4B00,#FF8800); }
+
+/* ── BOTTOM NAV ── */
+.nav {
+  background: #0c1020;
+  border-top: 1px solid rgba(255,255,255,.06);
+  display: flex; padding: 10px 0 32px; flex-shrink:0;
+}
+.ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-icon { font-size:20px; line-height:1; }
+.ni-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.ni.on .ni-label { color:#FF4B00; }
+.ni:not(.on) .ni-label { color:rgba(255,255,255,.25); }
+.ni:not(.on) .ni-icon { opacity:.3; }
+.ni.on .ni-icon { filter: drop-shadow(0 0 6px rgba(255,75,0,.6)); }
+
+/* Design label below */
+.caption {
+  margin-top: 22px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px;
+  letter-spacing: .2em;
+  color: rgba(255,255,255,.2);
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<div class="design-label">Design 01 / 04</div>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="app">
+      <div class="header">
+        <div class="header-row">
+          <div>
+            <div class="greeting">Bonjour,</div>
+            <div class="name">LUCAS <em>B.</em></div>
+            <div class="sub">3 tournois à venir</div>
+          </div>
+          <div class="avatar">LB</div>
+        </div>
+        <div class="header-stripe"></div>
+      </div>
+      <div class="chips">
+        <div class="chip active">Tous</div>
+        <div class="chip">À venir</div>
+        <div class="chip">Week-end</div>
+        <div class="chip">Passés</div>
+      </div>
+      <div class="content">
+        <div class="section-label">À venir</div>
+
+        <div class="t-card">
+          <div class="t-card-body">
+            <div class="t-card-top">
+              <div class="t-name">OPEN BEACH PARIS</div>
+              <div class="countdown soon">Demain</div>
+            </div>
+            <div class="t-meta"><span>📅 sam. 22 juin · 9h00</span><span>📍 Bercy Beach</span></div>
+            <div class="badges">
+              <span class="badge bf">4×4</span>
+              <span class="badge bg">Mixte</span>
+              <span class="badge bs">🏖️ Beach</span>
+              <span class="badge bp">12€</span>
+            </div>
+          </div>
+          <div class="t-team">
+            <div class="team-left">
+              <div class="tl">Équipe</div>
+              <div class="tn">Les Sabliers</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+              <div class="avs">
+                <div class="av av1">LB</div><div class="av av2">MK</div>
+                <div class="av av3">SR</div><div class="av av4">JD</div>
+                <div class="av ave"></div><div class="av ave"></div>
+              </div>
+              <div class="spots-row">
+                <div class="sp on"></div><div class="sp on"></div>
+                <div class="sp on"></div><div class="sp on"></div>
+                <div class="sp off"></div><div class="sp off"></div>
+              </div>
+            </div>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:66%"></div></div>
+        </div>
+
+        <div class="t-card">
+          <div class="t-card-body">
+            <div class="t-card-top">
+              <div class="t-name">TOURNOI D'ÉTÉ VINCENNES</div>
+              <div class="countdown">Dans 5j</div>
+            </div>
+            <div class="t-meta"><span>📅 jeu. 27 juin · 14h00</span><span>📍 Vincennes</span></div>
+            <div class="badges">
+              <span class="badge bf">3×3</span>
+              <span class="badge bg">Masculin</span>
+              <span class="badge bs">🌿 Green</span>
+              <span class="badge bfr">Gratuit</span>
+            </div>
+          </div>
+          <div class="t-team">
+            <div class="team-left">
+              <div class="tl">Équipe</div>
+              <div class="tn">Team Vincennes</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+              <div class="avs">
+                <div class="av av1">LB</div>
+                <div class="av av2">PL</div>
+                <div class="av ave"></div>
+              </div>
+              <div class="spots-row">
+                <div class="sp on"></div><div class="sp on"></div><div class="sp off"></div>
+              </div>
+            </div>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:66%"></div></div>
+        </div>
+
+        <div class="section-label" style="margin-top:8px;">Passés</div>
+        <div class="t-card" style="opacity:.4;">
+          <div class="t-card-body">
+            <div class="t-card-top">
+              <div class="t-name">COUPE PRINTEMPS 2024</div>
+              <span class="badge bg" style="align-self:flex-start;margin-top:2px;">Terminé</span>
+            </div>
+            <div class="t-meta"><span>📅 dim. 12 mai</span><span>📍 Stade Charléty</span></div>
+            <div class="badges"><span class="badge bf">2×2</span><span class="badge bg">Mixte</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="nav">
+        <div class="ni on"><div class="ni-icon">🏠</div><div class="ni-label">Accueil</div></div>
+        <div class="ni"><div class="ni-icon">👥</div><div class="ni-label">Groupes</div></div>
+        <div class="ni"><div class="ni-icon">🏆</div><div class="ni-label">Tournois</div></div>
+        <div class="ni"><div class="ni-icon">🔍</div><div class="ni-label">Rechercher</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="caption">SPIKE — Dark Athletic · Bebas Neue + DM Sans</div>
+</body>
+</html>

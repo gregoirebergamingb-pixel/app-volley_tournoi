@@ -1,22 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import TournamentCard from '../components/TournamentCard';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
-const GENDER_BADGE   = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
-const SURFACE_LABELS = { green: '🌿 Green', beach: '🏖️ Beach', gymnase: '🏛️ Gymnase' };
-const SURFACE_BADGE  = { green: 'badge-green', beach: 'badge-yellow', gymnase: 'badge-purple' };
-
-function daysUntil(dateStr) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const diff = Math.round((new Date(dateStr) - today) / 86400000);
-  if (diff < 0)  return null;
-  if (diff === 0) return "Aujourd'hui";
-  if (diff === 1) return 'Demain';
-  if (diff < 8)  return `Dans ${diff}j`;
-  return null;
-}
 
 function GroupDetail({ user }) {
   const { groupId } = useParams();
@@ -118,8 +105,10 @@ function GroupDetail({ user }) {
   if (loading) return (
     <>
       <div className="app-header">
-        <Link to="/groups" className="back-btn">← Groupes</Link>
-        <div className="header-row"><div className="header-title">Chargement…</div></div>
+        <div className="header-inner">
+          <Link to="/groups" className="back-btn">← Groupes</Link>
+          <div className="header-row"><div className="header-title">Chargement…</div></div>
+        </div>
       </div>
       <div className="page-content"></div>
     </>
@@ -127,8 +116,10 @@ function GroupDetail({ user }) {
   if (!group) return (
     <>
       <div className="app-header">
-        <Link to="/groups" className="back-btn">← Groupes</Link>
-        <div className="header-row"><div className="header-title">Groupe introuvable</div></div>
+        <div className="header-inner">
+          <Link to="/groups" className="back-btn">← Groupes</Link>
+          <div className="header-row"><div className="header-title">Groupe introuvable</div></div>
+        </div>
       </div>
     </>
   );
@@ -142,20 +133,22 @@ function GroupDetail({ user }) {
     <>
       {/* Header */}
       <div className="app-header">
-        <Link to="/groups" className="back-btn">← Groupes</Link>
-        <div className="header-row">
-          <div style={{ minWidth:0 }}>
-            <div className="header-title">{group.name}</div>
-            <div className="header-subtitle">
-              {group.members.length} membre{group.members.length !== 1 ? 's' : ''} · {tournaments.length} tournoi{tournaments.length !== 1 ? 's' : ''}
+        <div className="header-inner">
+          <Link to="/groups" className="back-btn">← Groupes</Link>
+          <div className="header-row">
+            <div style={{ minWidth:0 }}>
+              <div className="header-title">{group.name}</div>
+              <div className="header-subtitle">
+                {group.members.length} membre{group.members.length !== 1 ? 's' : ''} · {tournaments.length} tournoi{tournaments.length !== 1 ? 's' : ''}
+              </div>
             </div>
+            {isOwner && (
+              <div style={{ display:'flex', gap:'6px', flexShrink:0 }}>
+                <button className="button-secondary btn-sm" style={{ background:'rgba(255,255,255,0.2)', color:'white', border:'1px solid rgba(255,255,255,0.4)' }}
+                  onClick={startEditGroup}>Modifier</button>
+              </div>
+            )}
           </div>
-          {isOwner && (
-            <div style={{ display:'flex', gap:'6px', flexShrink:0 }}>
-              <button className="button-secondary btn-sm" style={{ background:'rgba(255,255,255,0.2)', color:'white', border:'1px solid rgba(255,255,255,0.4)' }}
-                onClick={startEditGroup}>Modifier</button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -244,15 +237,6 @@ function GroupDetail({ user }) {
 }
 
 function TournamentRow({ t, isCreator, editingId, editData, onEdit, onSave, onDelete, onCancelEdit, onEditChange, actionLoading }) {
-  const navigate = useNavigate();
-  const genderBadge   = GENDER_BADGE[t.gender]   || 'badge-grey';
-  const surfaceBadge  = SURFACE_BADGE[t.surface]  || '';
-  const surfaceLabel  = SURFACE_LABELS[t.surface] || '';
-  const countdown     = daysUntil(t.date);
-  const dateStr = t.date
-    ? new Date(t.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-    : '';
-
   if (editingId === t.id) {
     return (
       <div className="card">
@@ -289,34 +273,13 @@ function TournamentRow({ t, isCreator, editingId, editData, onEdit, onSave, onDe
   }
 
   return (
-    <div className="t-card" style={{ cursor:'pointer' }}
-      onClick={() => navigate(`/tournaments/${t.id}`)}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div className="t-card-name">{t.name}</div>
-          <div className="t-card-meta">📅 {dateStr} · {t.time}</div>
-          <div className="t-card-meta">📍 {t.location}</div>
-          <div className="t-card-badges">
-            <span className="badge badge-blue">{t.playerFormat || t.format}</span>
-            <span className={`badge ${genderBadge}`}>{GENDER_LABELS[t.gender] || t.gender}</span>
-            {surfaceLabel && <span className={`badge ${surfaceBadge}`}>{surfaceLabel}</span>}
-            {t.price > 0
-              ? <span className="badge badge-yellow">{t.price}€</span>
-              : <span className="badge badge-green">Gratuit</span>}
-          </div>
-        </div>
-        {countdown && <span className="countdown">{countdown}</span>}
-      </div>
-      {isCreator && (
-        <div className="t-card-footer" onClick={e => e.stopPropagation()}>
-          <div style={{ display:'flex', gap:'6px' }}>
-            <button className="button-secondary btn-sm" onClick={() => onEdit(t)}>Modifier</button>
-            <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(t)}>Supprimer</button>
-          </div>
-          <span style={{ fontSize:11, color:'var(--primary)', fontWeight:600 }}>Voir →</span>
-        </div>
-      )}
-    </div>
+    <TournamentCard
+      tournament={t}
+      isCreator={isCreator}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      actionLoading={actionLoading}
+    />
   );
 }
 

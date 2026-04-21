@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import AvatarMenu from '../components/AvatarMenu';
 
@@ -19,10 +19,11 @@ function initials(firstName, lastName) {
 
 function Groups({ user, onLogout }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [groups, setGroups]       = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
-  const [openPanel, setOpenPanel] = useState(null); // 'create' | 'join' | null
+  const [openPanel, setOpenPanel] = useState(searchParams.get('panel') || null); // 'create' | 'join' | null
   const [createName, setCreateName]           = useState('');
   const [createDescription, setCreateDescription] = useState('');
   const [createResult, setCreateResult]       = useState(null);
@@ -144,12 +145,14 @@ function Groups({ user, onLogout }) {
     <>
       {/* Header */}
       <div className="app-header">
-        <div className="header-row">
-          <div>
-            <div className="header-title">Mes Groupes</div>
-            <div className="header-subtitle">{groups.length} groupe{groups.length !== 1 ? 's' : ''}</div>
+        <div className="header-inner">
+          <div className="header-row">
+            <div>
+              <div className="header-title">Mes Groupes</div>
+              <div className="header-subtitle">{groups.length} groupe{groups.length !== 1 ? 's' : ''}</div>
+            </div>
+            <AvatarMenu user={user} onLogout={onLogout} />
           </div>
-          <AvatarMenu user={user} onLogout={onLogout} />
         </div>
       </div>
 

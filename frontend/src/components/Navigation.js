@@ -2,10 +2,9 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const TABS = [
-  { path: '/dashboard',     icon: '🏠', label: 'Accueil'     },
-  { path: '/groups',        icon: '👥', label: 'Groupes'     },
-  { path: '/nos-tournois',  icon: '🏆', label: 'Tournois'    },
-  { path: '/recherche',     icon: '🔍', label: 'Rechercher'  },
+  { path: '/dashboard', icon: '🏠', label: 'Accueil'  },
+  { path: '/creer',     icon: '➕', label: 'Créer'    },
+  { path: '/recherche', icon: '🔍', label: 'Explorer' },
 ];
 
 function Navigation() {

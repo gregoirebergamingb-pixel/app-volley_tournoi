@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAGE — Beach Tropical</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #ffecd2 0%, #fcb69f 40%, #a1c4fd 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  padding: 48px 20px 56px;
+}
+
+.design-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  color: rgba(80,40,20,.4);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.phone {
+  width: 390px;
+  height: 844px;
+  background: #FFF8F2;
+  border-radius: 46px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 1.5px rgba(255,140,80,.25),
+    0 0 0 8px rgba(255,255,255,.5),
+    0 0 0 9.5px rgba(255,140,80,.12),
+    0 50px 100px rgba(100,40,0,.2),
+    inset 0 0 0 1px rgba(255,255,255,.8);
+}
+
+.notch {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  width:120px; height:34px; background:#1a1a1a; border-radius:20px; z-index:100;
+}
+
+.app { width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── HEADER ── */
+.header {
+  flex-shrink: 0;
+  position: relative;
+  padding: 0 0 0 0;
+  overflow: hidden;
+}
+
+.header-bg {
+  background: linear-gradient(160deg, #FF6B35 0%, #F7A55B 60%, #FFD166 100%);
+  padding: 58px 24px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Wavy bottom of header */
+.wave-svg { display:block; margin-bottom:-2px; }
+
+.header-row { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:16px; }
+
+.greeting {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 600;
+  color: rgba(255,255,255,.7); letter-spacing:.06em;
+  text-transform: uppercase; margin-bottom: 2px;
+}
+.name {
+  font-family: 'Fraunces', serif;
+  font-size: 36px; font-weight: 700;
+  color: #fff; line-height: 1; letter-spacing:-.01em;
+}
+.name em { font-style: italic; font-weight: 300; }
+.sub { font-size: 12px; color: rgba(255,255,255,.75); margin-top:6px; }
+
+.avatar {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,.25);
+  border: 2.5px solid rgba(255,255,255,.6);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 17px; font-weight:700;
+  color: #fff; flex-shrink:0;
+  backdrop-filter: blur(8px);
+}
+
+/* ── CHIPS ── */
+.chips {
+  display: flex; gap: 7px;
+  padding: 14px 20px;
+  background: #FFF8F2;
+  overflow-x: auto; flex-shrink: 0;
+  scrollbar-width: none;
+  border-bottom: 1.5px solid rgba(255,120,60,.1);
+}
+.chips::-webkit-scrollbar{display:none;}
+.chip {
+  padding: 7px 16px;
+  border-radius: 30px;
+  font-size: 11px; font-weight: 700;
+  white-space: nowrap; flex-shrink: 0; cursor: pointer;
+}
+.chip.active { background: #FF6B35; color: #fff; box-shadow: 0 4px 12px rgba(255,107,53,.35); }
+.chip:not(.active) { background: rgba(255,107,53,.08); color: #FF6B35; }
+
+/* ── CONTENT ── */
+.content { flex:1; overflow-y:auto; padding:14px 18px; scrollbar-width:none; }
+.content::-webkit-scrollbar{display:none;}
+
+.section-label {
+  font-family: 'Fraunces', serif;
+  font-size: 13px; font-weight:600; font-style:italic;
+  color: rgba(100,60,30,.4);
+  margin-bottom: 10px; margin-top:2px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-label::after { content:''; flex:1; height:1px; background:rgba(255,120,60,.15); }
+
+/* ── CARD ── */
+.t-card {
+  background: #fff;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(200,80,30,.1), 0 1px 4px rgba(0,0,0,.05);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  border: 1.5px solid rgba(255,140,80,.12);
+}
+.t-card:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(200,80,30,.15); }
+
+/* Top accent bar */
+.card-accent {
+  height: 4px;
+  background: linear-gradient(90deg, #FF6B35, #FFD166);
+}
+.card-accent.teal { background: linear-gradient(90deg, #06D6A0, #48CAE4); }
+.card-accent.coral { background: linear-gradient(90deg, #EF476F, #FF6B35); }
+
+.t-card-body { padding:14px 16px 10px; }
+.t-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.group-dot-row { display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+.group-dot { width:8px; height:8px; border-radius:50%; background:#FF6B35; }
+.group-name { font-size:10px; font-weight:700; color:rgba(100,60,30,.5); letter-spacing:.06em; text-transform:uppercase; }
+
+.t-name {
+  font-family: 'Fraunces', serif;
+  font-size: 18px; font-weight:700;
+  color: #1A0A00; line-height: 1.15; flex:1;
+}
+.countdown {
+  background: linear-gradient(135deg, #FF6B35, #FF9A5C);
+  color: #fff;
+  font-size: 11px; font-weight:700;
+  padding: 4px 10px; border-radius: 20px; flex-shrink:0;
+  box-shadow: 0 2px 8px rgba(255,107,53,.3);
+}
+.countdown.soon { background: linear-gradient(135deg,#EF476F,#FF6B35); }
+
+.t-meta { font-size:11px; color:rgba(100,60,30,.5); margin-top:7px; display:flex; gap:12px; flex-wrap:wrap; }
+.badges { display:flex; gap:5px; margin-top:8px; flex-wrap:wrap; }
+.badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; }
+.bf { background:#FFF0E8; color:#FF6B35; }
+.bg { background:#E8F0FF; color:#4466CC; }
+.bs { background:#E8FFF5; color:#00AA77; }
+.bp { background:#FFFCE8; color:#CC8800; }
+.bfr { background:#E8FFF5; color:#00AA77; }
+
+/* Team section */
+.t-team {
+  background: linear-gradient(135deg, rgba(255,107,53,.05), rgba(255,209,102,.05));
+  border-top: 1px solid rgba(255,120,60,.1);
+  padding: 10px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.tl { font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,107,53,.7); }
+.tn { font-size:13px; font-weight:700; color:#1A0A00; margin-top:1px; font-family:'Fraunces',serif; }
+
+.avs { display:flex; }
+.av {
+  width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:#fff;
+  border:2.5px solid #fff; margin-left:-8px;
+}
+.av:first-child{margin-left:0;}
+.av1{background:linear-gradient(135deg,#FF6B35,#FF9A5C);}
+.av2{background:linear-gradient(135deg,#4466CC,#77AAFF);}
+.av3{background:linear-gradient(135deg,#06D6A0,#48CAE4);}
+.av4{background:linear-gradient(135deg,#EF476F,#FF6B35);}
+.ave{background:#F5EDE8;border:1.5px dashed rgba(255,120,60,.3);}
+
+.spots-row{display:flex;gap:3px;margin-top:5px;}
+.sp{width:6px;height:6px;border-radius:50%;}
+.sp.on{background:linear-gradient(135deg,#FF6B35,#FFD166);}
+.sp.off{background:rgba(200,120,80,.12);}
+
+.progress{height:3px;background:rgba(255,120,60,.1);border-radius:4px;margin:0 16px 0;}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#FF6B35,#FFD166);}
+
+/* Footer */
+.t-footer {
+  padding:8px 16px 12px;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11px; color:rgba(100,60,30,.4);
+}
+.see-btn {
+  font-size:11px; font-weight:700; color:#FF6B35;
+  background: rgba(255,107,53,.08); padding:4px 10px; border-radius:20px;
+}
+
+/* ── BOTTOM NAV ── */
+.nav {
+  background: #fff;
+  border-top: 1.5px solid rgba(255,120,60,.12);
+  display:flex; padding:10px 0 32px; flex-shrink:0;
+  box-shadow: 0 -4px 20px rgba(200,80,30,.07);
+}
+.ni { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.ni-icon { font-size:20px; line-height:1; }
+.ni-label { font-size:9px; font-weight:700; }
+.ni.on .ni-label { color:#FF6B35; }
+.ni:not(.on) .ni-label { color:rgba(150,100,70,.4); }
+.ni:not(.on) .ni-icon { opacity:.35; }
+
+.caption {
+  margin-top:22px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:11px; font-weight:600;
+  letter-spacing:.12em; color:rgba(80,30,10,.4);
+  text-align:center; text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<div class="design-label">Design 02 / 04</div>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="app">
+    <div class="header">
+      <div class="header-bg">
+        <div class="header-row">
+          <div>
+            <div class="greeting">Bonjour,</div>
+            <div class="name">Lucas <em>Benoit</em></div>
+            <div class="sub">☀️ 3 tournois à venir</div>
+          </div>
+          <div class="avatar">LB</div>
+        </div>
+      </div>
+      <!-- Wave -->
+      <svg class="wave-svg" viewBox="0 0 390 32" preserveAspectRatio="none" height="32" width="390" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,0 C60,32 120,32 195,16 C270,0 330,0 390,16 L390,32 L0,32 Z" fill="#FFF8F2"/>
+      </svg>
+    </div>
+
+    <div class="chips">
+      <div class="chip active">Tous</div>
+      <div class="chip">À venir</div>
+      <div class="chip">Week-end</div>
+      <div class="chip">Passés</div>
+    </div>
+
+    <div class="content">
+      <div class="section-label">À venir</div>
+
+      <div class="t-card">
+        <div class="card-accent"></div>
+        <div class="t-card-body">
+          <div class="group-dot-row">
+            <div class="group-dot" style="background:#FF6B35"></div>
+            <div class="group-name">Équipe Paris Sud</div>
+          </div>
+          <div class="t-card-top">
+            <div class="t-name">Open Beach Paris</div>
+            <div class="countdown soon">Demain</div>
+          </div>
+          <div class="t-meta"><span>📅 sam. 22 juin · 9h00</span><span>📍 Bercy Beach</span></div>
+          <div class="badges">
+            <span class="badge bf">4×4</span>
+            <span class="badge bg">Mixte</span>
+            <span class="badge bs">🏖️ Beach</span>
+            <span class="badge bp">12€</span>
+          </div>
+        </div>
+        <div class="t-team">
+          <div><div class="tl">Équipe</div><div class="tn">Les Sabliers</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+            <div class="avs">
+              <div class="av av1">LB</div><div class="av av2">MK</div>
+              <div class="av av3">SR</div><div class="av av4">JD</div>
+              <div class="av ave"></div>
+            </div>
+            <div class="spots-row">
+              <div class="sp on"></div><div class="sp on"></div>
+              <div class="sp on"></div><div class="sp on"></div>
+              <div class="sp off"></div>
+            </div>
+          </div>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:80%"></div></div>
+        <div class="t-footer"><span>👥 Équipe Paris Sud</span><span class="see-btn">Voir →</span></div>
+      </div>
+
+      <div class="t-card">
+        <div class="card-accent teal"></div>
+        <div class="t-card-body">
+          <div class="group-dot-row">
+            <div class="group-dot" style="background:#06D6A0"></div>
+            <div class="group-name">Club Vincennes</div>
+          </div>
+          <div class="t-card-top">
+            <div class="t-name">Tournoi d'Été Vincennes</div>
+            <div class="countdown">Dans 5j</div>
+          </div>
+          <div class="t-meta"><span>📅 jeu. 27 juin · 14h</span><span>📍 Vincennes</span></div>
+          <div class="badges">
+            <span class="badge bf">3×3</span>
+            <span class="badge bg">Masculin</span>
+            <span class="badge bs">🌿 Green</span>
+            <span class="badge bfr">Gratuit</span>
+          </div>
+        </div>
+        <div class="t-team">
+          <div><div class="tl">Équipe</div><div class="tn">Team Vincennes</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+            <div class="avs">
+              <div class="av av1">LB</div><div class="av av2">PL</div><div class="av ave"></div>
+            </div>
+            <div class="spots-row"><div class="sp on"></div><div class="sp on"></div><div class="sp off"></div></div>
+          </div>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:66%;background:linear-gradient(90deg,#06D6A0,#48CAE4)"></div></div>
+        <div class="t-footer"><span>👥 Club Vincennes</span><span class="see-btn" style="color:#06D6A0;background:rgba(6,214,160,.08)">Voir →</span></div>
+      </div>
+
+      <div class="section-label" style="margin-top:4px;">Passés</div>
+      <div class="t-card" style="opacity:.45;">
+        <div class="card-accent coral"></div>
+        <div class="t-card-body">
+          <div class="t-card-top">
+            <div class="t-name">Coupe Printemps 2024</div>
+            <span class="badge bg" style="align-self:flex-start;">Terminé</span>
+          </div>
+          <div class="t-meta"><span>📅 dim. 12 mai</span><span>📍 Charléty</span></div>
+          <div class="badges"><span class="badge bf">2×2</span><span class="badge bg">Mixte</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="ni on"><div class="ni-icon">🏠</div><div class="ni-label">Accueil</div></div>
+      <div class="ni"><div class="ni-icon">👥</div><div class="ni-label">Groupes</div></div>
+      <div class="ni"><div class="ni-icon">🏆</div><div class="ni-label">Tournois</div></div>
+      <div class="ni"><div class="ni-icon">🔍</div><div class="ni-label">Rechercher</div></div>
+    </div>
+  </div>
+</div>
+<div class="caption">PLAGE — Beach Tropical · Fraunces + Plus Jakarta Sans</div>
+</body>
+</html>
