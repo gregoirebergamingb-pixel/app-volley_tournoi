@@ -24,28 +24,17 @@ function resizeImage(file, size) {
 }
 
 function Register({ onLogin }) {
-  const [step, setStep]                   = useState('profile'); // 'profile' | 'group'
-  const [token, setToken]                 = useState('');
-
-  // Profile fields
-  const [email, setEmail]                 = useState('');
-  const [password, setPassword]           = useState('');
-  const [firstName, setFirstName]         = useState('');
-  const [lastName, setLastName]           = useState('');
-  const [phone, setPhone]                 = useState('');
-  const [gender, setGender]               = useState('');
-  const [level, setLevel]                 = useState('');
+  const [email, setEmail]                     = useState('');
+  const [password, setPassword]               = useState('');
+  const [firstName, setFirstName]             = useState('');
+  const [lastName, setLastName]               = useState('');
+  const [phone, setPhone]                     = useState('');
+  const [gender, setGender]                   = useState('');
+  const [level, setLevel]                     = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [avatarBase64, setAvatarBase64]   = useState(null);
-
-  // Group step
-  const [groupAction, setGroupAction]     = useState(''); // '' | 'create' | 'join'
-  const [groupName, setGroupName]         = useState('');
-  const [groupDescription, setGroupDescription] = useState('');
-  const [inviteCodeInput, setInviteCodeInput] = useState('');
-
-  const [error, setError]                 = useState('');
-  const [loading, setLoading]             = useState(false);
+  const [avatarBase64, setAvatarBase64]       = useState(null);
+  const [error, setError]                     = useState('');
+  const [loading, setLoading]                 = useState(false);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -75,11 +64,10 @@ function Register({ onLogin }) {
         gender, level, phone, avatarUrl: avatarBase64 || null
       });
       onLogin(res.data.token, res.data.user);
-      setToken(res.data.token);
       if (inviteCode) {
         navigate(`/rejoindre/${inviteCode}`);
       } else {
-        setStep('group');
+        navigate('/groups');
       }
     } catch (err) {
       setError(err.response?.data?.error || "Erreur lors de l'inscription");
@@ -88,126 +76,6 @@ function Register({ onLogin }) {
     }
   };
 
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
-    if (!groupName.trim()) return;
-    setLoading(true); setError('');
-    try {
-      await axios.post(`${API_URL}/api/groups`,
-        { name: groupName.trim(), description: groupDescription },
-        { headers: { Authorization: `Bearer ${token}` } });
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la création du groupe');
-    } finally { setLoading(false); }
-  };
-
-  const handleJoinGroup = async (e) => {
-    e.preventDefault();
-    if (!inviteCodeInput.trim()) return;
-    setLoading(true); setError('');
-    try {
-      await axios.post(`${API_URL}/api/groups/join`,
-        { inviteCode: inviteCodeInput.trim().toUpperCase() },
-        { headers: { Authorization: `Bearer ${token}` } });
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Code invalide');
-    } finally { setLoading(false); }
-  };
-
-  // ── Step 2 : Group ──────────────────────────────────────────────
-  if (step === 'group') {
-    return (
-      <div className="auth-form">
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ fontSize: 44, marginBottom: 8 }}>👥</div>
-          <h2 style={{ marginBottom: 8 }}>Rejoignez un groupe</h2>
-          <p style={{ fontSize: 13, color: '#607080', lineHeight: 1.55 }}>
-            Les groupes permettent de partager des tournois entre amis ou coéquipiers.
-            Vous pouvez voir tous les tournois organisés par votre groupe et vous y inscrire en équipe.
-          </p>
-        </div>
-
-        {/* Benefits */}
-        <div style={{ background: '#F0F6FF', borderRadius: 12, padding: '12px 14px', marginBottom: 20 }}>
-          {[
-            ['🏐', 'Accédez à tous les tournois de votre club ou équipe'],
-            ['👟', 'Créez des équipes et invitez vos coéquipiers'],
-            ['🔗', 'Invitez des amis avec un simple lien'],
-          ].map(([icon, text]) => (
-            <div key={text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
-              <span style={{ fontSize: 13, color: '#445', lineHeight: 1.4 }}>{text}</span>
-            </div>
-          ))}
-        </div>
-
-        {error && <div className="message error">{error}</div>}
-
-        {/* Action selector */}
-        {!groupAction && (
-          <>
-            <button style={{ width: '100%', marginBottom: 10 }}
-              onClick={() => setGroupAction('create')}>
-              🏗️ Créer un groupe
-            </button>
-            <button className="button-secondary" style={{ width: '100%', marginBottom: 16 }}
-              onClick={() => setGroupAction('join')}>
-              🔗 Rejoindre avec un code
-            </button>
-          </>
-        )}
-
-        {/* Create form */}
-        {groupAction === 'create' && (
-          <form onSubmit={handleCreateGroup}>
-            <div className="form-group">
-              <label>Nom du groupe <span className="required-star">*</span></label>
-              <input value={groupName} onChange={e => setGroupName(e.target.value)}
-                placeholder="ex: Neptune de Nantes" required autoFocus />
-            </div>
-            <div className="form-group">
-              <label>Description (optionnel)</label>
-              <textarea value={groupDescription} onChange={e => setGroupDescription(e.target.value)}
-                placeholder="ex: Équipe de beach volley loisir…" rows={2} />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={loading}>{loading ? 'Création…' : 'Créer le groupe'}</button>
-              <button type="button" className="button-secondary" onClick={() => setGroupAction('')}>Retour</button>
-            </div>
-          </form>
-        )}
-
-        {/* Join form */}
-        {groupAction === 'join' && (
-          <form onSubmit={handleJoinGroup}>
-            <div className="form-group">
-              <label>Code d'invitation <span className="required-star">*</span></label>
-              <input value={inviteCodeInput} onChange={e => setInviteCodeInput(e.target.value.toUpperCase())}
-                placeholder="ex: AB12CD" required autoFocus />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={loading}>{loading ? 'Connexion…' : 'Rejoindre'}</button>
-              <button type="button" className="button-secondary" onClick={() => setGroupAction('')}>Retour</button>
-            </div>
-          </form>
-        )}
-
-        {/* Skip */}
-        {!groupAction && (
-          <p style={{ textAlign: 'center', marginTop: 4 }}>
-            <button className="btn-link" style={{ background: 'none', border: 'none', color: '#90A0B0', fontSize: 13, cursor: 'pointer', padding: 0 }}
-              onClick={() => navigate('/dashboard')}>
-              Passer pour l'instant →
-            </button>
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  // ── Step 1 : Profile ────────────────────────────────────────────
   return (
     <div className="auth-form">
       <h2>Inscription</h2>
@@ -239,31 +107,25 @@ function Register({ onLogin }) {
       <form onSubmit={handleRegister}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="form-group">
-            <label htmlFor="firstName">Prénom</label>
+            <label htmlFor="firstName">Prénom <span className="required-star">*</span></label>
             <input id="firstName" type="text" value={firstName}
               onChange={e => setFirstName(e.target.value)} placeholder="Prénom" required />
           </div>
           <div className="form-group">
-            <label htmlFor="lastName">Nom</label>
+            <label htmlFor="lastName">Nom <span className="required-star">*</span></label>
             <input id="lastName" type="text" value={lastName}
               onChange={e => setLastName(e.target.value)} placeholder="Nom" required />
           </div>
         </div>
 
         <div className="form-group">
-          <label htmlFor="phone">Téléphone</label>
-          <input id="phone" type="tel" value={phone}
-            onChange={e => setPhone(e.target.value)} placeholder="ex: 06 12 34 56 78" required />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">Email <span className="required-star">*</span></label>
           <input id="email" type="email" value={email}
             onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" required />
         </div>
 
         <div className="form-group">
-          <label>Genre</label>
+          <label>Genre <span className="required-star">*</span></label>
           <div className="gender-selector">
             <label className={`gender-option ${gender === 'masculin' ? 'selected' : ''}`}>
               <input type="radio" name="gender" value="masculin" checked={gender === 'masculin'}
@@ -291,16 +153,26 @@ function Register({ onLogin }) {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
+          <label htmlFor="phone">Téléphone</label>
+          <input id="phone" type="tel" value={phone}
+            onChange={e => setPhone(e.target.value)} placeholder="ex: 06 12 34 56 78" />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Mot de passe <span className="required-star">*</span></label>
           <input id="password" type="password" value={password}
             onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
         </div>
 
         <div className="form-group">
-          <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
+          <label htmlFor="confirmPassword">Confirmer le mot de passe <span className="required-star">*</span></label>
           <input id="confirmPassword" type="password" value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" required />
         </div>
+
+        <p style={{ fontSize: 12, color: '#B0C0D0', marginBottom: 16 }}>
+          <span className="required-star">*</span> Champs obligatoires
+        </p>
 
         <button type="submit" disabled={loading}>
           {loading ? 'Inscription en cours…' : "S'inscrire →"}

@@ -44,12 +44,6 @@ function AvatarMenu({ user, onLogout }) {
           <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups'); }}>
             👥 Mes groupes
           </div>
-          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups?panel=create'); }}>
-            ➕ Créer un groupe
-          </div>
-          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups?panel=join'); }}>
-            🔗 Rejoindre un groupe
-          </div>
 
           <div className="avatar-menu-sep" />
 

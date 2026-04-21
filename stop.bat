@@ -1,18 +1,14 @@
 @echo off
-REM Fichier pour arrêter l'application Volleyball Tournament Manager
-
 echo.
-echo ====================================
-echo Arret de l'application
-echo ====================================
-echo.
+echo Arret de l'application...
 
 REM Tuer les processus Node.js
-echo Fermeture des serveurs...
-taskkill /IM node.exe /F
+taskkill /IM node.exe /F >nul 2>&1
 
-echo.
-echo  Application arretee!
-echo.
+REM Fermer les fenetres CMD ouvertes par run.bat
+taskkill /FI "WINDOWTITLE eq Backend - Volleyball Tournament App" /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq Frontend - Volleyball Tournament App" /F >nul 2>&1
 
-pause
+echo Application arretee !
+echo.
+timeout /t 2 /nobreak >nul

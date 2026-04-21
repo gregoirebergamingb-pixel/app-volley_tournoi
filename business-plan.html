@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volley Tournois — Business Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --blue:    #1565C0;
+    --blue-l:  #1E88E5;
+    --blue-xl: #E3F0FF;
+    --accent:  #FF6B35;
+    --green:   #2E7D32;
+    --text:    #1A2332;
+    --muted:   #607080;
+    --border:  #E0EAF4;
+    --bg:      #F5F8FF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text);
+    background: white;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  /* ── Pages ── */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 12px;
+    padding: 0;
+    background: white;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    background: linear-gradient(145deg, #0D47A1 0%, #1565C0 45%, #1976D2 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0;
+  }
+  .cover-top {
+    padding: 48px 52px 0;
+    flex: 1;
+  }
+  .cover-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.9);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 36px;
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+  .cover-emoji {
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .cover h1 {
+    font-family: 'Syne', 'Inter', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    letter-spacing: -1px;
+  }
+  .cover-sub {
+    font-size: 20px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 300;
+    margin-bottom: 40px;
+    letter-spacing: 0.02em;
+  }
+  .cover-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 400;
+    max-width: 420px;
+    line-height: 1.65;
+  }
+  .cover-footer {
+    padding: 32px 52px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cover-footer-left { color: rgba(255,255,255,0.6); font-size: 12px; }
+  .cover-footer-left strong { color: white; font-size: 14px; display: block; margin-bottom: 2px; }
+  .cover-stats {
+    display: flex;
+    gap: 32px;
+  }
+  .cover-stat { text-align: center; }
+  .cover-stat-n { color: white; font-size: 22px; font-weight: 800; display: block; }
+  .cover-stat-l { color: rgba(255,255,255,0.6); font-size: 11px; }
+
+  /* ── Content pages ── */
+  .page-inner {
+    padding: 44px 52px;
+    height: 100%;
+  }
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--blue-xl);
+  }
+  .page-number {
+    background: var(--blue);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .page-title {
+    font-family: 'Syne', 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--blue);
+    letter-spacing: -0.3px;
+  }
+  .page-logo {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Sections ── */
+  h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  h2:first-child { margin-top: 0; }
+  p { color: var(--muted); margin-bottom: 10px; font-size: 12.5px; }
+
+  /* ── Cards ── */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .cards-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card-accent { border-left: 3px solid var(--blue); }
+  .card-green  { border-left: 3px solid var(--green); background: #F1F8F1; }
+  .card-orange { border-left: 3px solid var(--accent); background: #FFF5F0; }
+  .card h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .card p { margin: 0; font-size: 12px; }
+
+  /* ── Highlight numbers ── */
+  .big-num {
+    font-family: 'Syne', 'Inter', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--blue);
+    line-height: 1;
+    display: block;
+  }
+  .big-num-label { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Timeline phases ── */
+  .timeline { position: relative; padding-left: 24px; margin: 10px 0 16px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 6px; bottom: 6px;
+    width: 2px;
+    background: var(--border);
+  }
+  .tl-item { position: relative; margin-bottom: 18px; }
+  .tl-dot {
+    position: absolute;
+    left: -20px; top: 4px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--blue);
+  }
+  .tl-dot.green  { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
+  .tl-dot.orange { background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .tl-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .tl-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--blue-xl);
+    color: var(--blue);
+  }
+  .tl-tag.green  { background: #E8F5E9; color: var(--green); }
+  .tl-tag.orange { background: #FFF3E0; color: #E65100; }
+  .tl-body { font-size: 12px; color: var(--muted); }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  th {
+    background: var(--blue);
+    color: white;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  th:first-child { border-radius: 6px 0 0 0; }
+  th:last-child  { border-radius: 0 6px 0 0; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--bg); }
+  .td-green { color: var(--green); font-weight: 600; }
+  .td-blue  { color: var(--blue);  font-weight: 600; }
+  .td-muted { color: var(--muted); }
+
+  /* ── Cost bar chart ── */
+  .bar-chart { margin: 12px 0 16px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-label { width: 90px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--blue-xl); border-radius: 4px; height: 22px; position: relative; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 700; color: white; }
+  .bar-value { font-size: 11px; font-weight: 700; color: var(--text); flex-shrink: 0; width: 70px; text-align: right; }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; margin: 8px 0 16px; }
+  .checklist li {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .icon { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Pill tags ── */
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .pill {
+    background: var(--blue-xl);
+    color: var(--blue);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .pill.orange { background: #FFF3E0; color: #E65100; }
+  .pill.green  { background: #E8F5E9; color: var(--green); }
+
+  /* ── Separator ── */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* ── Print ── */
+  @media print {
+    body { margin: 0; }
+    .page { margin: 0; box-shadow: none; page-break-after: always; }
+    @page { size: A4; margin: 0; }
+  }
+  @media screen {
+    body { background: #CBD5E0; padding: 24px 0; }
+    .page { box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     PAGE 1 — COVER
+══════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-top">
+    <div class="cover-tag">Business Plan · 2025</div>
+    <span class="cover-emoji">🏐</span>
+    <h1>Volley<br>Tournois</h1>
+    <div class="cover-sub">Organisation & Découverte de tournois</div>
+    <p class="cover-desc">
+      Une application mobile-first pour organiser ses équipes, suivre ses tournois
+      et découvrir de nouvelles compétitions — pensée pour les joueurs, par les joueurs.
+    </p>
+  </div>
+  <div class="cover-footer">
+    <div class="cover-footer-left">
+      <strong>Grégoire Bergamin</strong>
+      Fondateur &amp; Développeur
+    </div>
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <span class="cover-stat-n">3</span>
+        <span class="cover-stat-l">Phases</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-n">18 mois</span>
+        <span class="cover-stat-l">Horizon</span>
+      </div>
+      <div class="cover-stat">
+        <span class="cover-stat-n">7€</span>
+        <span class="cover-stat-l">Coût initial/mois</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — CONTEXTE & OPPORTUNITÉ
+══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="page-number">1</div>
+      <div class="page-title">Contexte & Opportunité</div>
+      <div class="page-logo">Volley Tournois</div>
+    </div>
+
+    <h2>🎯 Le problème</h2>
+    <p>
+      Les joueurs amateurs de volley (beach, green, indoor) s'inscrivent aux tournois via des canaux
+      variés (FFVolley, organisateurs locaux, bouche-à-oreille), puis s'organisent entre eux via
+      WhatsApp, tableaux Excel ou groupes Facebook. Il n'existe pas d'outil simple dédié à cette
+      coordination.
+    </p>
+
+    <div class="cards">
+      <div class="card card-accent">
+        <h3>😤 Aujourd'hui</h3>
+        <p>Groupes WhatsApp surchargés · Qui joue avec qui ? · Oubli de dates · Pas de suivi des équipes</p>
+      </div>
+      <div class="card card-green">
+        <h3>✅ Avec l'app</h3>
+        <p>Un seul endroit pour tout · Équipes organisées · Calendrier intégré · Découverte de tournois</p>
+      </div>
+    </div>
+
+    <h2>📊 Le marché</h2>
+    <div class="cards cards-3">
+      <div class="card">
+        <span class="big-num">400K</span>
+        <span class="big-num-label">licenciés beach volley<br>en France (FFVolley)</span>
+      </div>
+      <div class="card">
+        <span class="big-num">×3</span>
+        <span class="big-num-label">croissance depuis<br>les JO de Paris 2024</span>
+      </div>
+      <div class="card">
+        <span class="big-num">~1M</span>
+        <span class="big-num-label">pratiquants non licenciés<br>(loisir & non affiliés)</span>
+      </div>
+    </div>
+
+    <h2>🏆 Positionnement</h2>
+    <div class="cards">
+      <div class="card card-orange">
+        <h3>Ce que l'app N'est PAS</h3>
+        <p>Un logiciel de gestion de club lourd · Une billetterie · Un réseau social général</p>
+      </div>
+      <div class="card card-green">
+        <h3>Ce que l'app EST</h3>
+        <p>Un outil léger d'organisation entre joueurs · Simple à prendre en main · 100% mobile</p>
+      </div>
+    </div>
+
+    <div class="pills">
+      <span class="pill">Beach Volley</span>
+      <span class="pill">Green Volley</span>
+      <span class="pill">Volley Indoor</span>
+      <span class="pill orange">Loisir → National</span>
+      <span class="pill green">France</span>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — PRODUIT ACTUEL
+══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="page-number">2</div>
+      <div class="page-title">Produit actuel — MVP</div>
+      <div class="page-logo">Volley Tournois</div>
+    </div>
+
+    <p>L'application est développée, déployée et fonctionnelle. Voici ce qui existe aujourd'hui :</p>
+
+    <div class="cards">
+      <div class="card card-accent">
+        <h3>👤 Compte & Profil</h3>
+        <p>Inscription avec niveau de jeu (Loisir → Pro), photo de profil, modification du mot de passe</p>
+      </div>
+      <div class="card card-accent">
+        <h3>👥 Groupes</h3>
+        <p>Créer / rejoindre via lien ou <strong>QR code</strong> · Invitation directe depuis l'app</p>
+      </div>
+      <div class="card card-accent">
+        <h3>🏆 Tournois</h3>
+        <p>Création avec format, catégorie, surface, lieu (géolocalisé), prix · Modification par le créateur</p>
+      </div>
+      <div class="card card-accent">
+        <h3>🤝 Équipes</h3>
+        <p>Créer / rejoindre · Joueurs externes (sans compte) · Niveau moyen calculé · Règles mixte</p>
+      </div>
+      <div class="card card-accent">
+        <h3>🔍 Recherche</h3>
+        <p>Recherche publique par nom, format, catégorie, surface · <strong>Rayon GPS configurable</strong></p>
+      </div>
+      <div class="card card-accent">
+        <h3>📅 Calendrier</h3>
+        <p>Export en un clic vers Google Calendar ou Apple / Outlook (.ics)</p>
+      </div>
+    </div>
+
+    <h2>⚙️ Stack technique</h2>
+    <table>
+      <tr><th>Composant</th><th>Technologie</th><th>Hébergement</th></tr>
+      <tr><td>Frontend</td><td>React 18, React Router</td><td class="td-blue">Netlify (gratuit)</td></tr>
+      <tr><td>Backend</td><td>Node.js, Express</td><td class="td-blue">Render</td></tr>
+      <tr><td>Base de données</td><td>Firebase Firestore</td><td class="td-blue">Firebase (gratuit)</td></tr>
+      <tr><td>Géocodage</td><td>Nominatim OpenStreetMap</td><td class="td-green">Gratuit</td></tr>
+    </table>
+
+    <h2>🔒 Sécurité en place</h2>
+    <div class="pills">
+      <span class="pill">JWT Auth</span>
+      <span class="pill">bcrypt</span>
+      <span class="pill">Helmet (headers)</span>
+      <span class="pill">Rate limiting</span>
+      <span class="pill">CORS restreint</span>
+      <span class="pill">Codes d'invitation crypto-aléatoires</span>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 4 — ROADMAP 3 PHASES
+══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="page-number">3</div>
+      <div class="page-title">Roadmap — 3 phases</div>
+      <div class="page-logo">Volley Tournois</div>
+    </div>
+
+    <div class="timeline">
+
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-header">
+          Phase 1 — Valider
+          <span class="tl-tag">0 – 6 mois</span>
+          <span class="tl-tag" style="background:#FEF3C7;color:#92400E;">7€/mois</span>
+        </div>
+        <div class="tl-body">
+          <strong>Objectif : 50 utilisateurs actifs réels.</strong><br>
+          Déployer dans ses propres cercles sportifs. Collecter les retours terrain : qu'est-ce qui manque ?
+          qu'est-ce qui est inutile ? Identifier les 3 fonctionnalités les plus demandées.<br><br>
+          <strong>Actions concrètes :</strong> passer Render en Starter (fin du cold start) · partager dans 2-3 équipes ·
+          surveiller les métriques de rétention à J+7.
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot green"></div>
+        <div class="tl-header">
+          Phase 2 — Croître
+          <span class="tl-tag green">6 – 18 mois</span>
+          <span class="tl-tag" style="background:#FEF3C7;color:#92400E;">~22€/mois</span>
+        </div>
+        <div class="tl-body">
+          <strong>Objectif : 500 utilisateurs, première monétisation.</strong><br>
+          Fonctionnalités prioritaires à développer dans l'ordre :<br><br>
+          <strong>1. Chat par équipe</strong> — messagerie temps réel (Firestore), remplace les numéros de téléphone<br>
+          <strong>2. Profil public</strong> — historique de tournois, niveau visible, statistiques joueur<br>
+          <strong>3. Notifications</strong> — rappel J-1, alerte équipe complète (email ou push)<br>
+          <strong>4. Tournois publics</strong> — découvrables par tous les utilisateurs sans être dans leur groupe<br><br>
+          <strong>Première monétisation :</strong> Premium individuel à 3€/mois (groupes illimités, notifications, stats).
+          Avec 5% de conversion sur 500 users → ~75€/mois, couvre l'infrastructure.
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div class="tl-header">
+          Phase 3 — Scalabilité
+          <span class="tl-tag orange">18 mois+</span>
+          <span class="tl-tag" style="background:#FEF3C7;color:#92400E;">~100€/mois</span>
+        </div>
+        <div class="tl-body">
+          <strong>Objectif : 5 000+ utilisateurs, modèle B2B clubs.</strong><br>
+          Pivot partiel vers les clubs et associations sportives. Un club FFVolley gère 50-200 membres
+          et plusieurs équipes — ils n'ont aucun outil adapté. Tarif club : <strong>20-50€/mois</strong>.<br><br>
+          50 clubs × 30€ = <strong>1 500€/mois</strong> · Coûts infra : ~100€ · Marge nette : ~1 400€/mois<br><br>
+          Migration technique : Firebase → <strong>Supabase</strong> (Postgres, plus scalable et moins cher à grande
+          échelle). Ajout de rôles admin/coach dans les groupes.
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 5 — MONÉTISATION & COÛTS
+══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="page-number">4</div>
+      <div class="page-title">Monétisation & Infrastructure</div>
+      <div class="page-logo">Volley Tournois</div>
+    </div>
+
+    <h2>💰 Modèle de revenus</h2>
+    <table>
+      <tr><th>Offre</th><th>Cible</th><th>Prix</th><th>Fonctionnalités</th></tr>
+      <tr>
+        <td><strong>Gratuit</strong></td>
+        <td>Joueurs individuels</td>
+        <td class="td-green">0€</td>
+        <td>1 groupe, tournois, équipes, recherche</td>
+      </tr>
+      <tr>
+        <td><strong>Premium</strong></td>
+        <td>Joueurs actifs</td>
+        <td class="td-blue">3€/mois</td>
+        <td>Groupes illimités, notifications, stats, export</td>
+      </tr>
+      <tr>
+        <td><strong>Club</strong></td>
+        <td>Associations sportives</td>
+        <td class="td-blue">20–50€/mois</td>
+        <td>Gestion membres, rôles coach/admin, tableaux de bord</td>
+      </tr>
+    </table>
+
+    <h2>📈 Projection revenus (Phase 2 → Phase 3)</h2>
+    <table>
+      <tr><th>Étape</th><th>Users actifs</th><th>Conversion payante</th><th>Revenu mensuel</th><th>Coût infra</th></tr>
+      <tr><td>Phase 1</td><td class="td-muted">50</td><td class="td-muted">0%</td><td class="td-muted">0€</td><td class="td-muted">7€</td></tr>
+      <tr><td>Phase 2 début</td><td>200</td><td>5%</td><td class="td-blue">30€</td><td class="td-muted">22€</td></tr>
+      <tr><td>Phase 2 fin</td><td>500</td><td>8%</td><td class="td-blue">120€</td><td class="td-muted">30€</td></tr>
+      <tr><td>Phase 3</td><td>5 000 + 50 clubs</td><td>—</td><td class="td-green">1 500€+</td><td class="td-muted">100€</td></tr>
+    </table>
+
+    <h2>🖥️ Coûts d'infrastructure selon la taille</h2>
+    <div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">300 users</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:4%;background:#1565C0;">7€</div>
+        </div>
+        <div class="bar-value">7€/mois</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">1 000 users</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:14%;background:#1565C0;">22€</div>
+        </div>
+        <div class="bar-value">22€/mois</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">5 000 users</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:52%;background:#1976D2;">85€</div>
+        </div>
+        <div class="bar-value">85€/mois</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">20 000 users</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:92%;background:#1E88E5;">~150€</div>
+        </div>
+        <div class="bar-value">~150€/mois</div>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:var(--muted);">
+      * Au-delà de 5 000 utilisateurs actifs, migration recommandée vers Supabase (Postgres) qui offre
+      un coût/requête 10× inférieur à Firestore à grande échelle.
+    </p>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 6 — ACTIONS IMMÉDIATES
+══════════════════════════════════════ -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="page-number">5</div>
+      <div class="page-title">Plan d'action immédiat</div>
+      <div class="page-logo">Volley Tournois</div>
+    </div>
+
+    <h2>✅ Ce qui est déjà fait</h2>
+    <ul class="checklist">
+      <li><span class="icon">✅</span>Application développée et déployée (Netlify + Render + Firebase)</li>
+      <li><span class="icon">✅</span>Sécurité en place (helmet, rate limiting, CORS, JWT)</li>
+      <li><span class="icon">✅</span>Recherche géolocalisée avec rayon GPS</li>
+      <li><span class="icon">✅</span>Export calendrier Google / Apple</li>
+      <li><span class="icon">✅</span>QR code d'invitation pour les groupes</li>
+      <li><span class="icon">✅</span>Joueurs externes (réservation de places sans compte)</li>
+    </ul>
+
+    <h2>🚀 Prochaines étapes prioritaires</h2>
+    <ul class="checklist">
+      <li><span class="icon">1️⃣</span><div><strong>Passer Render en Starter (7$/mois)</strong><br><span style="color:var(--muted);font-size:12px;">Supprime le cold start de 30-60 secondes. Indispensable pour une vraie expérience utilisateur.</span></div></li>
+      <li><span class="icon">2️⃣</span><div><strong>Déployer dans 2-3 équipes réelles</strong><br><span style="color:var(--muted);font-size:12px;">Tester sur des utilisateurs qui ne connaissent pas le projet. Observer sans intervenir.</span></div></li>
+      <li><span class="icon">3️⃣</span><div><strong>Développer le chat par équipe</strong><br><span style="color:var(--muted);font-size:12px;">La feature qui crée le plus d'engagement. Remplace le besoin d'échanger les numéros de téléphone.</span></div></li>
+      <li><span class="icon">4️⃣</span><div><strong>Profil public + statistiques joueur</strong><br><span style="color:var(--muted);font-size:12px;">Historique de tournois, niveau visible, cliquable depuis les équipes.</span></div></li>
+      <li><span class="icon">5️⃣</span><div><strong>Notifications (rappel J-1, équipe complète)</strong><br><span style="color:var(--muted);font-size:12px;">Email via Resend ou SendGrid. Coût : quasi nul jusqu'à 10 000 emails/mois.</span></div></li>
+    </ul>
+
+    <hr class="sep">
+
+    <div class="cards">
+      <div class="card" style="background:linear-gradient(135deg,#0D47A1,#1565C0);border:none;">
+        <h3 style="color:white;margin-bottom:8px;">Résumé en une phrase</h3>
+        <p style="color:rgba(255,255,255,0.85);font-size:12.5px;">
+          L'app existe, fonctionne et est sécurisée. L'enjeu maintenant n'est plus technique —
+          c'est de trouver les premiers utilisateurs réels et d'écouter ce dont ils ont besoin.
+        </p>
+      </div>
+      <div class="card card-green">
+        <h3>Contact</h3>
+        <p style="font-size:12px;">
+          <strong>Grégoire Bergamin</strong><br>
+          gregoire.bergamin.gb@gmail.com<br><br>
+          Application déployée :<br>
+          <span style="color:var(--blue);font-weight:600;">gestion-tournoi-volley.netlify.app</span>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

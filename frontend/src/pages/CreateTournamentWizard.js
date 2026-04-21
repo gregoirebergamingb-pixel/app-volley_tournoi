@@ -133,7 +133,6 @@ function CreateTournamentWizard({ user }) {
   const fe = (key) => fieldErrors[key] ? 'form-group field-error' : 'form-group';
   const clearErr = (key) => fieldErrors[key] && setFieldErrors(p => { const n = {...p}; delete n[key]; return n; });
 
-  const selectedGroup = groups.find(g => g.id === groupId);
 
   return (
     <>

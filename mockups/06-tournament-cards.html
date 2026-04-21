@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup — Tournament Cards</title>
+  <link rel="stylesheet" href="_shared.css">
+  <style>
+    body { align-items: flex-start; gap: 40px; flex-wrap: wrap; padding: 40px 20px; }
+
+    .label-above {
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .col { display: flex; flex-direction: column; align-items: center; }
+
+    /* ═══════════════════════════════════════
+       VARIANTE A — Inline row (compact)
+       Team name + avatars + count in one row
+    ═══════════════════════════════════════ */
+    .team-row-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #EEF2F8;
+    }
+    .team-name-inline {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1565C0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100px;
+      flex-shrink: 1;
+    }
+    .avatars-inline {
+      display: flex;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .count-pill {
+      flex-shrink: 0;
+      margin-left: auto;
+      background: #E3F2FD;
+      color: #1565C0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+    .count-pill.complete {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+
+    /* ═══════════════════════════════════════
+       VARIANTE B — Colored band at bottom
+       Full-width banner with gradient tint
+    ═══════════════════════════════════════ */
+    .team-band {
+      margin: 12px -16px -14px;
+      padding: 10px 16px 12px;
+      background: linear-gradient(135deg, #EBF3FF 0%, #F0F6FF 100%);
+      border-top: 1.5px solid #D0E4F8;
+      border-radius: 0 0 16px 16px;
+    }
+    .team-band-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+    .team-band-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1565C0;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .team-band-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: #90A0B0;
+    }
+    .team-band-count.complete { color: #2E7D32; }
+    .avatars-band {
+      display: flex;
+      gap: 5px;
+    }
+    /* Avatar with label below */
+    .av-labeled {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .av-label {
+      font-size: 9px;
+      color: #7A8A9A;
+      font-weight: 500;
+      max-width: 36px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    /* Shared card tweak */
+    .t-card { margin-bottom: 12px; }
+
+    /* Countdown badges */
+    .countdown { font-size: 11px; font-weight: 700; color: #E65100; background: #FFF3E0; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+    .countdown.soon { color: #2E7D32; background: #E8F5E9; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     VARIANTE A — Ligne inline (compact)
+     Nom · Avatars · Compteur
+══════════════════════════════════════════════ -->
+<div class="col">
+  <div class="label-above">Variante A — Ligne compacte</div>
+  <div class="phone" style="height:auto; padding-bottom: 20px;">
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <span class="status-icons">▲ ● ●●●</span>
+    </div>
+    <div class="app-header">
+      <div class="header-row">
+        <div class="header-title">Accueil</div>
+        <div class="header-avatar">TM</div>
+      </div>
+    </div>
+
+    <div class="content" style="padding-bottom: 16px; overflow: visible;">
+
+      <div class="section-label">Ce week-end</div>
+
+      <!-- Card A1 — équipe partielle -->
+      <div class="t-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <div class="t-card-name">Open Beach Nantes</div>
+            <div class="t-card-meta"><span>📅</span> Sam. 19 avril · 9h00</div>
+            <div class="t-card-meta"><span>📍</span> Plage de la Beaujoire, Nantes</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span class="badge badge-blue">3x3</span>
+              <span class="badge badge-purple">Mixte</span>
+              <span class="badge badge-green">Gratuit</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 4j</span>
+        </div>
+
+        <!-- Team row inline — Variante A -->
+        <div class="team-row-inline">
+          <span class="team-name-inline">Les Volcans</span>
+          <div class="avatars-inline">
+            <div class="avatar sz-sm av-blue">TM</div>
+            <div class="avatar sz-sm av-pink">SL</div>
+            <div class="avatar sz-sm av-green">RC</div>
+            <div class="avatar sz-sm av-more">+1</div>
+          </div>
+          <span class="count-pill">4/6</span>
+        </div>
+      </div>
+
+      <!-- Card A2 — équipe complète -->
+      <div class="t-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <div class="t-card-name">Tournoi Été Saint-Nazaire</div>
+            <div class="t-card-meta"><span>📅</span> Dim. 20 avril · 10h00</div>
+            <div class="t-card-meta"><span>📍</span> Stade Nautique, Saint-Nazaire</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span class="badge badge-blue">4x4</span>
+              <span class="badge badge-orange">Masculin</span>
+              <span class="badge badge-yellow">12€</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 5j</span>
+        </div>
+
+        <div class="team-row-inline">
+          <span class="team-name-inline">Team Raptors</span>
+          <div class="avatars-inline">
+            <div class="avatar sz-sm av-indigo">TM</div>
+            <div class="avatar sz-sm av-teal">JD</div>
+            <div class="avatar sz-sm av-orange">PK</div>
+            <div class="avatar sz-sm av-purple">AR</div>
+          </div>
+          <span class="count-pill complete">4/4 ✓</span>
+        </div>
+      </div>
+
+      <!-- Card A3 — 2x2 complet -->
+      <div class="t-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <div class="t-card-name">Challenge Régional 2x2</div>
+            <div class="t-card-meta"><span>📅</span> Dim. 4 mai · 8h30</div>
+            <div class="t-card-meta"><span>📍</span> Gymnase Marcel Cerdan, Angers</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span class="badge badge-blue">2x2</span>
+              <span class="badge badge-teal">Féminin</span>
+              <span class="badge badge-yellow">8€</span>
+            </div>
+          </div>
+          <span class="countdown soon">Dans 19j</span>
+        </div>
+
+        <div class="team-row-inline">
+          <span class="team-name-inline">Duo Dynamite</span>
+          <div class="avatars-inline">
+            <div class="avatar sz-sm av-pink">SL</div>
+            <div class="avatar sz-sm av-purple">MC</div>
+          </div>
+          <span class="count-pill complete">2/2 ✓</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     VARIANTE B — Bande colorée (avec prénoms)
+     Bandeau bas avec avatars + labels + compteur
+══════════════════════════════════════════════ -->
+<div class="col">
+  <div class="label-above">Variante B — Bande d'équipe</div>
+  <div class="phone" style="height:auto; padding-bottom: 20px;">
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <span class="status-icons">▲ ● ●●●</span>
+    </div>
+    <div class="app-header">
+      <div class="header-row">
+        <div class="header-title">Accueil</div>
+        <div class="header-avatar">TM</div>
+      </div>
+    </div>
+
+    <div class="content" style="padding-bottom: 16px; overflow: visible;">
+
+      <div class="section-label">Ce week-end</div>
+
+      <!-- Card B1 — équipe partielle -->
+      <div class="t-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <div class="t-card-name">Open Beach Nantes</div>
+            <div class="t-card-meta"><span>📅</span> Sam. 19 avril · 9h00</div>
+            <div class="t-card-meta"><span>📍</span> Plage de la Beaujoire, Nantes</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span class="badge badge-blue">3x3</span>
+              <span class="badge badge-purple">Mixte</span>
+              <span class="badge badge-green">Gratuit</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 4j</span>
+        </div>
+
+        <!-- Team band — Variante B -->
+        <div class="team-band">
+          <div class="team-band-header">
+            <span class="team-band-name">Les Volcans</span>
+            <span class="team-band-count">4 / 6 joueurs</span>
+          </div>
+          <div class="avatars-band">
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-blue">TM</div>
+              <div class="av-label">Thomas</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-pink">SL</div>
+              <div class="av-label">Sophie</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-green">RC</div>
+              <div class="av-label">Raphaël</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-more">+1</div>
+              <div class="av-label">Ext.</div>
+            </div>
+            <!-- Places libres -->
+            <div class="av-labeled">
+              <div class="avatar sz-sm" style="background:#EEF2F8; border:1.5px dashed #B0C4D8;"></div>
+              <div class="av-label" style="color:#C8D8E8;">Libre</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm" style="background:#EEF2F8; border:1.5px dashed #B0C4D8;"></div>
+              <div class="av-label" style="color:#C8D8E8;">Libre</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card B2 — équipe complète -->
+      <div class="t-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <div class="t-card-name">Tournoi Été Saint-Nazaire</div>
+            <div class="t-card-meta"><span>📅</span> Dim. 20 avril · 10h00</div>
+            <div class="t-card-meta"><span>📍</span> Stade Nautique, Saint-Nazaire</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span class="badge badge-blue">4x4</span>
+              <span class="badge badge-orange">Masculin</span>
+              <span class="badge badge-yellow">12€</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 5j</span>
+        </div>
+
+        <div class="team-band" style="background: linear-gradient(135deg, #E8F5E9 0%, #F1F8F2 100%); border-top-color: #A5D6A7;">
+          <div class="team-band-header">
+            <span class="team-band-name" style="color:#2E7D32;">Team Raptors</span>
+            <span class="team-band-count complete">Complet ✓</span>
+          </div>
+          <div class="avatars-band">
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-indigo">TM</div>
+              <div class="av-label">Thomas</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-teal">JD</div>
+              <div class="av-label">Jordan</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-orange">PK</div>
+              <div class="av-label">Paul</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-purple">AR</div>
+              <div class="av-label">Antoine</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card B3 — 2x2 complet -->
+      <div class="t-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <div class="t-card-name">Challenge Régional 2x2</div>
+            <div class="t-card-meta"><span>📅</span> Dim. 4 mai · 8h30</div>
+            <div class="t-card-meta"><span>📍</span> Gymnase Marcel Cerdan, Angers</div>
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span class="badge badge-blue">2x2</span>
+              <span class="badge badge-teal">Féminin</span>
+              <span class="badge badge-yellow">8€</span>
+            </div>
+          </div>
+          <span class="countdown soon">Dans 19j</span>
+        </div>
+
+        <div class="team-band" style="background: linear-gradient(135deg, #E8F5E9 0%, #F1F8F2 100%); border-top-color: #A5D6A7;">
+          <div class="team-band-header">
+            <span class="team-band-name" style="color:#2E7D32;">Duo Dynamite</span>
+            <span class="team-band-count complete">Complet ✓</span>
+          </div>
+          <div class="avatars-band">
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-pink">SL</div>
+              <div class="av-label">Sophie</div>
+            </div>
+            <div class="av-labeled">
+              <div class="avatar sz-sm av-purple">MC</div>
+              <div class="av-label">Marine</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

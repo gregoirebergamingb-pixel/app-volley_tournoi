@@ -143,6 +143,21 @@ function computeAverageLevel(memberDetails) {
 }
 
 // ============================================
+// HELPER - Vérifie si un user a accès à un tournoi
+// (membre du groupe principal OU d'un groupe lié)
+// ============================================
+async function userHasTournamentAccess(userId, tournamentData) {
+  const primaryGroup = await db.collection('groups').doc(tournamentData.groupId).get();
+  if (primaryGroup.exists && primaryGroup.data().members.includes(userId)) return true;
+  const linkedGroups = tournamentData.linkedGroups || [];
+  for (const gId of linkedGroups) {
+    const lgDoc = await db.collection('groups').doc(gId).get();
+    if (lgDoc.exists && lgDoc.data().members.includes(userId)) return true;
+  }
+  return false;
+}
+
+// ============================================
 // MIDDLEWARE - Vérification du token JWT
 // ============================================
 function verifyToken(req, res, next) {
@@ -354,19 +369,29 @@ app.get('/api/users/me/teams', verifyToken, async (req, res) => {
 });
 
 // Tous les tournois de tous mes groupes (onglet "Nos Tournois")
+// Inclut les tournois liés via linkedGroups
 app.get('/api/users/me/tournaments', verifyToken, async (req, res) => {
   try {
     const groupsSnapshot = await db.collection('groups')
       .where('members', 'array-contains', req.userId).get();
 
     const result = [];
+    const seenTournamentIds = new Set();
 
     for (const groupDoc of groupsSnapshot.docs) {
       const group = groupDoc.data();
-      const tournamentsSnapshot = await db.collection('tournaments')
-        .where('groupId', '==', group.id).get();
 
-      for (const tDoc of tournamentsSnapshot.docs) {
+      const [primarySnap, linkedSnap] = await Promise.all([
+        db.collection('tournaments').where('groupId', '==', group.id).get(),
+        db.collection('tournaments').where('linkedGroups', 'array-contains', group.id).get()
+      ]);
+
+      const allDocs = [...primarySnap.docs, ...linkedSnap.docs];
+
+      for (const tDoc of allDocs) {
+        if (seenTournamentIds.has(tDoc.id)) continue;
+        seenTournamentIds.add(tDoc.id);
+
         const tournament = tDoc.data();
         const teamsSnapshot = await db.collection('tournaments').doc(tournament.id).collection('teams').get();
         const teams = teamsSnapshot.docs.map(d => d.data());
@@ -724,6 +749,40 @@ app.delete('/api/tournaments/:tournamentId', verifyToken, async (req, res) => {
   }
 });
 
+// Ajouter un tournoi public à un groupe (depuis la recherche)
+app.post('/api/tournaments/:tournamentId/add-to-group', verifyToken, async (req, res) => {
+  try {
+    const { groupId } = req.body;
+    if (!groupId) return res.status(400).json({ error: 'groupId requis' });
+
+    const [tDoc, groupDoc] = await Promise.all([
+      db.collection('tournaments').doc(req.params.tournamentId).get(),
+      db.collection('groups').doc(groupId).get()
+    ]);
+
+    if (!tDoc.exists) return res.status(404).json({ error: 'Tournoi non trouvé' });
+    if (!groupDoc.exists || !groupDoc.data().members.includes(req.userId)) {
+      return res.status(403).json({ error: 'Accès non autorisé' });
+    }
+
+    const tournamentData = tDoc.data();
+    if (tournamentData.groupId === groupId) {
+      return res.status(400).json({ error: 'Ce tournoi appartient déjà à ce groupe' });
+    }
+
+    const linkedGroups = tournamentData.linkedGroups || [];
+    if (linkedGroups.includes(groupId)) {
+      return res.status(400).json({ error: 'Tournoi déjà ajouté à ce groupe' });
+    }
+
+    await tDoc.ref.update({ linkedGroups: [...linkedGroups, groupId] });
+    res.json({ message: 'Tournoi ajouté au groupe' });
+  } catch (error) {
+    console.error('Erreur ajout tournoi au groupe:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // ============================================
 // ROUTES - ÉQUIPES
 // ============================================
@@ -740,9 +799,8 @@ app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) =
     if (!tournament.exists) return res.status(404).json({ error: 'Tournoi non trouvé' });
     const tournamentData = tournament.data();
 
-    // Vérifier que l'utilisateur est membre du groupe
-    const group = await db.collection('groups').doc(tournamentData.groupId).get();
-    if (!group.exists || !group.data().members.includes(req.userId)) {
+    // Vérifier que l'utilisateur a accès au tournoi (groupe principal ou lié)
+    if (!await userHasTournamentAccess(req.userId, tournamentData)) {
       return res.status(403).json({ error: 'Accès non autorisé' });
     }
 
@@ -816,9 +874,8 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/join', verifyToken, async
     if (!tournament.exists) return res.status(404).json({ error: 'Tournoi non trouvé' });
     const tournamentData = tournament.data();
 
-    // Vérifier que l'utilisateur est membre du groupe
-    const group = await db.collection('groups').doc(tournamentData.groupId).get();
-    if (!group.exists || !group.data().members.includes(req.userId)) {
+    // Vérifier que l'utilisateur a accès au tournoi (groupe principal ou lié)
+    if (!await userHasTournamentAccess(req.userId, tournamentData)) {
       return res.status(403).json({ error: 'Accès non autorisé' });
     }
 

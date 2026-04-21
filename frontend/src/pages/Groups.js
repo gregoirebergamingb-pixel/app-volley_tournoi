@@ -228,7 +228,11 @@ function Groups({ user, onLogout }) {
         {!loading && groups.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">👥</div>
-            <p className="empty-text">Aucun groupe pour l'instant</p>
+            <p className="empty-text">Vous n'avez pas encore de groupe</p>
+            <p style={{ fontSize: 13, color: '#90A0B0', marginTop: 10, lineHeight: 1.6, maxWidth: 280, margin: '10px auto 0' }}>
+              Les groupes vous permettent de partager des tournois avec vos coéquipiers et d'organiser vos équipes ensemble.
+              Créez votre groupe ou rejoignez celui d'un ami avec son code d'invitation.
+            </p>
           </div>
         )}
 

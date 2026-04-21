@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import AvatarMenu from '../components/AvatarMenu';
 import TournamentCard from '../components/TournamentCard';
+import { groupColor } from '../components/TournamentCard';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -24,9 +25,24 @@ function TournamentSearch({ user, onLogout }) {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
 
+  // Groupes de l'utilisateur (pour la modal "Ajouter à mon groupe")
+  const [groups, setGroups]       = useState([]);
+  const [addModal, setAddModal]   = useState(null); // tournoi sélectionné
+  const [addGroupId, setAddGroupId] = useState('');
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError]   = useState('');
+  const [addedMap, setAddedMap]   = useState({}); // { tournamentId: true }
+
   const token = localStorage.getItem('token');
 
   const hasActiveFilter = query || formatFilter || genderFilter || dateFilter || surfaceFilter || userLat;
+
+  // Charger les groupes de l'utilisateur
+  useEffect(() => {
+    axios.get(`${API_URL}/api/groups`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => setGroups(res.data))
+      .catch(() => {});
+  }, []); // eslint-disable-line
 
   const handleGeolocate = () => {
     if (!navigator.geolocation) { setGeoError('Géolocalisation non supportée'); return; }
@@ -87,6 +103,30 @@ function TournamentSearch({ user, onLogout }) {
 
   const activeCount = [formatFilter, genderFilter, dateFilter, surfaceFilter, userLat ? 'geo' : '']
     .filter(Boolean).length;
+
+  const openAddModal = (tournament) => {
+    setAddModal(tournament);
+    setAddGroupId(groups.length === 1 ? groups[0].id : '');
+    setAddError('');
+  };
+
+  const handleAddToGroup = async () => {
+    if (!addModal || !addGroupId) return;
+    setAddLoading(true); setAddError('');
+    try {
+      await axios.post(
+        `${API_URL}/api/tournaments/${addModal.id}/add-to-group`,
+        { groupId: addGroupId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAddedMap(prev => ({ ...prev, [addModal.id]: true }));
+      setAddModal(null);
+    } catch (err) {
+      setAddError(err.response?.data?.error || 'Erreur lors de l\'ajout');
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   return (
     <>
@@ -149,7 +189,7 @@ function TournamentSearch({ user, onLogout }) {
           <span className="filter-label">Localisation</span>
           {!userLat ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button className={`seg-btn ${geoLoading ? '' : ''}`}
+              <button className="seg-btn"
                 onClick={handleGeolocate} disabled={geoLoading}
                 style={{ fontSize: 12 }}>
                 {geoLoading ? '⏳ Localisation…' : '📍 Ma position'}
@@ -217,11 +257,71 @@ function TournamentSearch({ user, onLogout }) {
                 tournament={item.tournament}
                 group={item.groupName ? { id: item.groupName, name: item.groupName } : null}
                 teamCount={item.teamCount}
+                onAddToGroup={addedMap[item.tournament.id] ? null : openAddModal}
               />
             ))}
           </>
         )}
       </div>
+
+      {/* Modal — Ajouter à un groupe */}
+      {addModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setAddModal(null)}>
+          <div
+            style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 36px', width: '100%', maxHeight: '70vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Handle */}
+            <div style={{ width: 40, height: 4, background: '#D0D8E8', borderRadius: 4, margin: '0 auto 20px' }} />
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#1A2440', marginBottom: 4 }}>
+                Ajouter à mon groupe
+              </div>
+              <div style={{ fontSize: 13, color: '#90A0B0' }}>{addModal.name}</div>
+            </div>
+
+            {addError && <div className="message error" style={{ marginBottom: 12 }}>{addError}</div>}
+
+            {groups.length === 0 ? (
+              <div className="empty-state" style={{ padding: '20px 0' }}>
+                <p style={{ fontSize: 13, color: '#90A0B0' }}>
+                  Vous n'avez pas encore de groupe.{' '}
+                  <span style={{ color: 'var(--primary)', cursor: 'pointer' }}
+                    onClick={() => { setAddModal(null); }}>
+                    Créez-en un
+                  </span> depuis la page Groupes.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="group-selector-list" style={{ marginBottom: 16 }}>
+                  {groups.map(g => (
+                    <button key={g.id} type="button"
+                      className={`group-selector-item ${addGroupId === g.id ? 'selected' : ''}`}
+                      onClick={() => setAddGroupId(g.id)}>
+                      <div className="group-selector-dot" style={{ background: groupColor(g.id) }} />
+                      <div>
+                        <div className="group-selector-name">{g.name}</div>
+                        <div className="group-selector-sub">{g.members?.length || 0} membre{g.members?.length !== 1 ? 's' : ''}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  style={{ width: '100%', padding: '13px' }}
+                  disabled={!addGroupId || addLoading}
+                  onClick={handleAddToGroup}>
+                  {addLoading ? 'Ajout en cours…' : '➕ Ajouter au groupe'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

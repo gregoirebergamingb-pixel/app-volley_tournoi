@@ -32,7 +32,7 @@ timeout /t 5 /nobreak
 
 REM Lancer le frontend dans une nouvelle fenêtre
 echo Lancement du frontend...
-start "Frontend - Volleyball Tournament App" cmd /k "cd /d "%SCRIPT_DIR%frontend" && npm start"
+start "Frontend - Volleyball Tournament App" cmd /k "cd /d "%SCRIPT_DIR%frontend" && SET BROWSER=none && npm start"
 
 REM Attendre 10 secondes pour que le frontend démarre
 timeout /t 10 /nobreak

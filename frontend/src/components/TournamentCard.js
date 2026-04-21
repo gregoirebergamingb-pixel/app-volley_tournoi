@@ -67,6 +67,7 @@ function TournamentCard({
   onEdit,
   onDelete,
   actionLoading,
+  onAddToGroup,
 }) {
   const countdown    = daysUntil(tournament.date);
   const genderLabel  = GENDER_LABELS[tournament.gender]   || '';
@@ -211,6 +212,13 @@ function TournamentCard({
             </>
           ) : (
             <>
+              {onAddToGroup && (
+                <button className="button-secondary btn-sm"
+                  style={{ fontSize: 11 }}
+                  onClick={e => { e.preventDefault(); e.stopPropagation(); onAddToGroup(tournament); }}>
+                  + Mon groupe
+                </button>
+              )}
               {teamCount !== undefined
                 ? <span style={{ fontSize: 11, color: '#90A0B0' }}>🏐 {teamCount} équipe{teamCount !== 1 ? 's' : ''}</span>
                 : <span></span>
