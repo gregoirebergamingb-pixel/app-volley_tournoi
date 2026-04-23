@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option C — Layout Magazine</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565C0 100%);
+  min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+  padding: 32px 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+  gap: 32px; flex-wrap: wrap;
+}
+.label-outer { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin-bottom: 10px; }
+.phone {
+  width: 390px; height: 780px; background: #F5F8FF;
+  border-radius: 24px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5); position: relative;
+}
+
+/* ── Magazine header — étendu, search intégré ── */
+.mag-header {
+  background: linear-gradient(160deg, #1A237E 0%, #1565C0 100%);
+  padding: 14px 16px 18px; flex-shrink: 0;
+  position: relative; overflow: hidden;
+}
+.mag-header::before {
+  content: ''; position: absolute; top: -30px; right: -20px;
+  width: 130px; height: 130px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+}
+.mag-header::after {
+  content: ''; display: block; height: 20px;
+  background: #F5F8FF;
+  clip-path: ellipse(56% 100% at 50% 100%);
+  margin-top: 8px; margin-left: -16px; margin-right: -16px; width: calc(100% + 32px);
+}
+.mag-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.mag-title { font-size: 20px; font-weight: 800; color: white; }
+.av-header { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #AD1457, #F06292); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 800; border: 2px solid rgba(255,255,255,0.4); }
+
+/* Search bar intégrée dans le header */
+.mag-search {
+  background: white; border-radius: 14px; padding: 11px 14px;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.mag-search input { flex: 1; border: none; outline: none; font-size: 14px; color: #1A2440; font-family: inherit; background: transparent; }
+.search-icon { font-size: 16px; }
+.filter-pill-mag {
+  flex-shrink: 0; height: 34px; padding: 0 11px;
+  border-radius: 10px; background: #E3F2FD; border: 1.5px solid #90CAF9;
+  color: #1565C0; display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; position: relative;
+}
+.filter-pill-badge { position: absolute; top: -6px; right: -6px; background: #E53935; color: white; font-size: 9px; font-weight: 800; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+
+/* Surface selector pills (sous le search) */
+.surface-pills { display: flex; gap: 8px; padding: 0 16px 10px; background: white; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+.surface-pills::-webkit-scrollbar { display: none; }
+.surf-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  border: 1.5px solid #E0E8F0; background: #F8FAFF; color: #546E7A;
+  flex-shrink: 0;
+}
+.surf-pill.active-beach { background: #FFF8E1; border-color: #FFD54F; color: #E65100; }
+.surf-pill.active-green { background: #E8F5E9; border-color: #81C784; color: #2E7D32; }
+.surf-pill.active-gym   { background: #F3E5F5; border-color: #CE93D8; color: #6A1B9A; }
+.surf-divider { height: 1px; background: #E8EEF4; margin: 0; flex-shrink: 0; }
+
+/* Content */
+.content { flex: 1; overflow-y: auto; padding: 12px 16px 80px; scrollbar-width: none; }
+.content::-webkit-scrollbar { display: none; }
+.result-count { font-size: 12px; color: #90A0B0; font-weight: 600; padding: 2px 0 10px; }
+
+/* Cards magazine avec fond thématique selon surface */
+.t-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border: none; cursor: pointer; transition: transform 0.12s; overflow: hidden; position: relative; }
+.t-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.t-card.beach-card { background: linear-gradient(180deg, #FFFBF0 0%, white 40%); }
+.t-card.beach-card::before { background: linear-gradient(90deg, #FFB300, #FF8F00); }
+.t-card.green-card { background: linear-gradient(180deg, #F1F8E9 0%, white 40%); }
+.t-card.green-card::before { background: linear-gradient(90deg, #43A047, #1B5E20); }
+.t-card.gym-card   { background: linear-gradient(180deg, #EDE7F6 0%, white 40%); }
+.t-card.gym-card::before   { background: linear-gradient(90deg, #8E24AA, #4A148C); }
+
+/* Surface accent tag (remplace le badge habituel) */
+.surface-accent {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 3px 8px; border-radius: 6px; margin-bottom: 8px;
+}
+.surface-accent.beach { background: #FFF3E0; color: #E65100; }
+.surface-accent.green { background: #E8F5E9; color: #2E7D32; }
+.surface-accent.gym   { background: #EDE7F6; color: #6A1B9A; }
+
+.t-name { font-family: 'Fraunces', Georgia, serif; font-size: 17px; font-weight: 700; color: #1A2440; line-height: 1.2; margin-bottom: 4px; }
+.t-meta { font-size: 12px; color: #788; margin-top: 2px; }
+.t-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.countdown { font-size: 11px; font-weight: 700; color: #E65100; background: #FFF3E0; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+.countdown.soon { color: #2E7D32; background: #E8F5E9; }
+.t-badges { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.b-blue { background: #E3F2FD; color: #1565C0; }
+.b-teal { background: #E0F7FA; color: #00695C; }
+.b-yellow { background: #FFFDE7; color: #F57F17; }
+.b-green { background: #E8F5E9; color: #2E7D32; }
+.b-orange { background: #FFF3E0; color: #E65100; }
+.team-section { border-top: 1px solid rgba(0,0,0,0.06); margin-top: 10px; padding-top: 10px; }
+.team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.team-name { font-size: 12px; font-weight: 700; color: #1565C0; }
+.team-count.full { font-size: 11px; color: #2E7D32; font-weight: 600; }
+.team-avs { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.av-with-name { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 10px; border: 2px solid white; }
+.av-blue { background: linear-gradient(135deg, #1565C0, #42A5F5); }
+.av-pink { background: linear-gradient(135deg, #AD1457, #F06292); }
+.av-green { background: linear-gradient(135deg, #2E7D32, #66BB6A); }
+.av-teal { background: linear-gradient(135deg, #00695C, #26A69A); }
+.av-firstname { font-size: 9px; font-weight: 600; color: #546E7A; text-align: center; white-space: nowrap; }
+.t-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
+.t-footer-muted { font-size: 11px; color: #90A0B0; }
+.add-btn { font-size: 11px; font-weight: 700; color: #1565C0; background: #E3F2FD; border: 1.5px solid #BBDEFB; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+/* Nav */
+.bottom-nav { height: 64px; background: white; border-top: 1px solid #E8EEF4; display: flex; align-items: center; justify-content: space-around; flex-shrink: 0; padding: 0 8px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; cursor: pointer; padding: 8px 0; }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 10px; font-weight: 600; color: #B0C0D0; }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="label-outer">Option C — Header Magazine + cards thématiques</div>
+  <div class="phone">
+
+    <!-- Magazine header avec search intégrée -->
+    <div class="mag-header">
+      <div class="mag-top-row">
+        <div class="mag-title">Explorer</div>
+        <div class="av-header">GB</div>
+      </div>
+      <div class="mag-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Nom, lieu, club…" readonly>
+        <div class="filter-pill-mag">
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 1.5h11M3 5h7M5 8.5h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          Filtres
+        </div>
+      </div>
+    </div>
+
+    <!-- Surface pills -->
+    <div class="surface-pills">
+      <div class="surf-pill">Tous</div>
+      <div class="surf-pill active-beach">🏖️ Beach</div>
+      <div class="surf-pill active-green">🌿 Green</div>
+      <div class="surf-pill active-gym">🏛️ Gymnase</div>
+    </div>
+    <div class="surf-divider"></div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="result-count">4 résultats</div>
+
+      <!-- Beach card -->
+      <div class="t-card beach-card">
+        <span class="surface-accent beach">🏖️ Beach volleyball</span>
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Beach Masters Lyon</div>
+            <div class="t-meta">📅 Sam. 26 avr. · 09:00</div>
+            <div class="t-meta">📍 Parc Tête d'Or, Lyon</div>
+            <div class="t-badges">
+              <span class="badge b-blue">2x2</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-green">Gratuit</span>
+            </div>
+          </div>
+          <span class="countdown soon">Demain</span>
+        </div>
+        <div class="team-section">
+          <div class="team-header">
+            <span class="team-name">Les Sableux</span>
+            <span class="team-count full">2/2 ✓</span>
+          </div>
+          <div class="team-avs">
+            <div class="av-with-name"><div class="av av-blue">GB</div><span class="av-firstname">Grégoire</span></div>
+            <div class="av-with-name"><div class="av av-pink">ML</div><span class="av-firstname">Marie-Lou</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Green card -->
+      <div class="t-card green-card">
+        <span class="surface-accent green">🌿 Green volleyball</span>
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Tournoi Green Valence</div>
+            <div class="t-meta">📅 Dim. 27 avr. · 10:00</div>
+            <div class="t-meta">📍 Valence-sur-Rhône</div>
+            <div class="t-badges">
+              <span class="badge b-blue">4x4</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-yellow">20€</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 2j</span>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">2 équipes</span>
+        </div>
+      </div>
+
+      <!-- Beach card 2 -->
+      <div class="t-card beach-card">
+        <span class="surface-accent beach">🏖️ Beach volleyball</span>
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Open Beach Grenoble</div>
+            <div class="t-meta">📅 Mer. 30 avr. · 14:00</div>
+            <div class="t-meta">📍 Grenoble Plage</div>
+            <div class="t-badges">
+              <span class="badge b-blue">3x3</span>
+              <span class="badge b-orange">Masculin</span>
+              <span class="badge b-yellow">25€</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 5j</span>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">3 équipes</span>
+        </div>
+      </div>
+
+      <!-- Gym card -->
+      <div class="t-card gym-card">
+        <span class="surface-accent gym">🏛️ Gymnase</span>
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Coupe du Département</div>
+            <div class="t-meta">📅 Sam. 10 mai · 09:00</div>
+            <div class="t-meta">📍 Salle Charlety, Paris</div>
+            <div class="t-badges">
+              <span class="badge b-blue">6x6</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-yellow">15€</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">8 équipes</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+      <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Groupes</div></div>
+      <div class="nav-item"><div class="nav-icon">🏆</div><div class="nav-label">Tournois</div></div>
+      <div class="nav-item"><div class="nav-icon">🔍</div><div class="nav-label" style="color:#1565C0;font-weight:800">Explorer</div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

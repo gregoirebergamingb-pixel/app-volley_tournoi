@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option B — Écran Découverte</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565C0 100%);
+  min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+  padding: 32px 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+  gap: 32px; flex-wrap: wrap;
+}
+.label-outer { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin-bottom: 10px; }
+.phone {
+  width: 390px; height: 780px; background: #F5F8FF;
+  border-radius: 24px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5); position: relative;
+}
+/* Header */
+.app-header { background: #1565C0; padding: 12px 16px 0; flex-shrink: 0; position: relative; z-index: 10; }
+.app-header::after { content: ''; display: block; height: 20px; background: #F5F8FF; clip-path: ellipse(56% 100% at 50% 100%); margin-top: -1px; }
+.header-row { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; }
+.header-title { font-size: 20px; font-weight: 800; color: white; }
+.av-header { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #AD1457, #F06292); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 800; border: 2px solid rgba(255,255,255,0.4); }
+/* Filter bar */
+.filter-bar { background: white; border-bottom: 1px solid #E8EEF4; padding: 10px 16px; flex-shrink: 0; }
+.filter-bar-row { display: flex; gap: 8px; align-items: center; }
+.search-wrap { flex: 1; background: white; border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); border: 1.5px solid #E8EEF4; }
+.search-wrap input { flex: 1; border: none; outline: none; font-size: 14px; color: #B0BEC5; font-family: inherit; background: transparent; }
+.filter-pill { height: 44px; padding: 0 12px; border-radius: 12px; background: #F0F4FF; border: 1.5px solid #D0D8E8; color: #546E7A; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+/* Content */
+.content { flex: 1; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; }
+.content::-webkit-scrollbar { display: none; }
+
+/* Discovery zone */
+.discovery-zone {
+  flex: 1;
+  background: linear-gradient(160deg, #E8F0FE 0%, #F5F8FF 60%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px 20px; gap: 0; position: relative; overflow: hidden;
+}
+.discovery-zone::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(21,101,192,0.06) 0%, transparent 70%);
+}
+.discovery-zone::after {
+  content: '';
+  position: absolute; bottom: 20px; left: -20px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(21,101,192,0.04) 0%, transparent 70%);
+}
+.discovery-ball {
+  font-size: 64px; margin-bottom: 12px;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 8px 20px rgba(21,101,192,0.2));
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.discovery-title {
+  font-size: 18px; font-weight: 800; color: #1A2440; text-align: center; margin-bottom: 6px;
+  font-family: 'Fraunces', Georgia, serif;
+}
+.discovery-sub {
+  font-size: 13px; color: #90A0B0; text-align: center; line-height: 1.5; margin-bottom: 24px;
+}
+.quick-filters {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; max-width: 340px;
+}
+.qf-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: white; border: 1.5px solid #D0D8E8;
+  border-radius: 20px; padding: 8px 14px;
+  font-size: 13px; font-weight: 600; color: #1A2440;
+  cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: all 0.15s;
+}
+.qf-pill:hover { background: #E3F2FD; border-color: #90CAF9; color: #1565C0; }
+.qf-pill.geo { background: #E3F2FD; border-color: #90CAF9; color: #1565C0; }
+
+/* Nav */
+.bottom-nav { height: 64px; background: white; border-top: 1px solid #E8EEF4; display: flex; align-items: center; justify-content: space-around; flex-shrink: 0; padding: 0 8px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; cursor: pointer; padding: 8px 0; }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 10px; font-weight: 600; color: #B0C0D0; }
+
+/* ─── SECOND PHONE (state with results + distance badges) ─── */
+.phone-b .content-b { flex: 1; overflow-y: auto; padding: 10px 16px 80px; scrollbar-width: none; }
+.content-b::-webkit-scrollbar { display: none; }
+.result-count { font-size: 12px; color: #90A0B0; font-weight: 600; padding: 4px 0 8px; display: flex; align-items: center; gap: 6px; }
+.result-count .geo-tag { background: #E3F2FD; color: #1565C0; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+.t-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 3px solid; cursor: pointer; }
+.t-name { font-family: 'Fraunces', Georgia, serif; font-size: 16px; font-weight: 700; color: #1A2440; line-height: 1.2; }
+.t-meta { font-size: 12px; color: #788; margin-top: 3px; }
+.t-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.t-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; margin-left: 8px; }
+.dist-badge { background: linear-gradient(135deg, #1565C0, #42A5F5); color: white; font-size: 11px; font-weight: 800; border-radius: 10px; padding: 3px 8px; }
+.countdown { font-size: 11px; font-weight: 700; color: #E65100; background: #FFF3E0; padding: 2px 8px; border-radius: 10px; }
+.countdown.soon { color: #2E7D32; background: #E8F5E9; }
+.t-badges { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.b-blue { background: #E3F2FD; color: #1565C0; }
+.b-teal { background: #E0F7FA; color: #00695C; }
+.b-yellow { background: #FFFDE7; color: #F57F17; }
+.b-green { background: #E8F5E9; color: #2E7D32; }
+.b-orange { background: #FFF3E0; color: #E65100; }
+.team-section { border-top: 1px solid #E8EEF4; margin-top: 10px; padding-top: 10px; }
+.team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.team-name { font-size: 12px; font-weight: 700; color: #1565C0; }
+.team-count { font-size: 11px; color: #2E7D32; font-weight: 600; }
+.team-avs { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.av-with-name { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 10px; border: 2px solid white; }
+.av-blue { background: linear-gradient(135deg, #1565C0, #42A5F5); }
+.av-pink { background: linear-gradient(135deg, #AD1457, #F06292); }
+.av-green { background: linear-gradient(135deg, #2E7D32, #66BB6A); }
+.av-teal { background: linear-gradient(135deg, #00695C, #26A69A); }
+.av-firstname { font-size: 9px; font-weight: 600; color: #546E7A; text-align: center; white-space: nowrap; }
+.t-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #E8EEF4; }
+.t-footer-muted { font-size: 11px; color: #90A0B0; }
+.add-btn { font-size: 11px; font-weight: 700; color: #1565C0; background: #E3F2FD; border: 1.5px solid #BBDEFB; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+.filter-pill-active { height: 44px; padding: 0 12px; border-radius: 12px; background: #1565C0; border: 1.5px solid #1565C0; color: white; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; white-space: nowrap; position: relative; }
+.filter-pill-badge { position: absolute; top: -7px; right: -7px; background: #E53935; color: white; font-size: 9px; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+</style>
+</head>
+<body>
+
+<!-- État vide : écran découverte -->
+<div>
+  <div class="label-outer">Option B — État vide (Découverte)</div>
+  <div class="phone">
+    <div class="app-header">
+      <div class="header-row">
+        <div class="header-title">Explorer</div>
+        <div class="av-header">GB</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-bar-row">
+        <div class="search-wrap">
+          <span style="font-size:15px">🔍</span>
+          <input type="text" placeholder="Nom, lieu, club…" readonly>
+        </div>
+        <div class="filter-pill">
+          <svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 1.5h12M3 5.5h8M5.5 9.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Filtres
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="discovery-zone">
+        <div class="discovery-ball">🏐</div>
+        <div class="discovery-title">Trouvez votre prochain tournoi</div>
+        <div class="discovery-sub">Recherchez par nom, lieu, ou utilisez<br>les raccourcis ci-dessous</div>
+        <div class="quick-filters">
+          <div class="qf-pill geo">📍 Près de moi</div>
+          <div class="qf-pill">🏖️ Beach</div>
+          <div class="qf-pill">📅 Ce week-end</div>
+          <div class="qf-pill">2x2</div>
+          <div class="qf-pill">🌿 Green</div>
+          <div class="qf-pill">Gratuit</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+      <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Groupes</div></div>
+      <div class="nav-item"><div class="nav-icon">🏆</div><div class="nav-label">Tournois</div></div>
+      <div class="nav-item"><div class="nav-icon">🔍</div><div class="nav-label" style="color:#1565C0;font-weight:800">Explorer</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- État avec résultats + badges distance -->
+<div>
+  <div class="label-outer">Option B — Avec résultats (📍 géo active)</div>
+  <div class="phone phone-b">
+    <div class="app-header">
+      <div class="header-row">
+        <div class="header-title">Explorer</div>
+        <div class="av-header">GB</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-bar-row">
+        <div class="search-wrap">
+          <span style="font-size:15px">🔍</span>
+          <input type="text" value="Beach" placeholder="Nom, lieu, club…" readonly>
+        </div>
+        <div class="filter-pill-active">
+          <svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 1.5h12M3 5.5h8M5.5 9.5h3" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Filtres
+          <span class="filter-pill-badge">2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-b" style="flex:1;overflow-y:auto;padding:10px 16px 80px;scrollbar-width:none">
+      <div class="result-count">
+        4 résultats <span class="geo-tag">📍 dans 25 km</span>
+      </div>
+
+      <div class="t-card" style="border-top-color:#1565C0">
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Beach Masters Lyon</div>
+            <div class="t-meta">📅 Sam. 26 avr. · 09:00</div>
+            <div class="t-meta">📍 Parc Tête d'Or, Lyon</div>
+            <div class="t-badges">
+              <span class="badge b-blue">2x2</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-green">Gratuit</span>
+            </div>
+          </div>
+          <div class="t-right">
+            <span class="dist-badge">📍 3 km</span>
+            <span class="countdown soon">Demain</span>
+          </div>
+        </div>
+        <div class="team-section">
+          <div class="team-header">
+            <span class="team-name">Les Sableux</span>
+            <span class="team-count">2/2 ✓</span>
+          </div>
+          <div class="team-avs">
+            <div class="av-with-name"><div class="av av-blue">GB</div><span class="av-firstname">Grégoire</span></div>
+            <div class="av-with-name"><div class="av av-pink">ML</div><span class="av-firstname">Marie-Lou</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="t-card" style="border-top-color:#7B1FA2">
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Open Beach Grenoble</div>
+            <div class="t-meta">📅 Dim. 27 avr. · 10:00</div>
+            <div class="t-meta">📍 Grenoble Plage</div>
+            <div class="t-badges">
+              <span class="badge b-blue">4x4</span>
+              <span class="badge b-orange">Masculin</span>
+              <span class="badge b-yellow">25€</span>
+            </div>
+          </div>
+          <div class="t-right">
+            <span class="dist-badge">📍 18 km</span>
+            <span class="countdown">Dans 2j</span>
+          </div>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">3 équipes</span>
+        </div>
+      </div>
+
+      <div class="t-card" style="border-top-color:#2E7D32">
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Beach Classic Annecy</div>
+            <div class="t-meta">📅 Mer. 30 avr. · 14:00</div>
+            <div class="t-meta">📍 Annecy-le-Vieux</div>
+            <div class="t-badges">
+              <span class="badge b-blue">3x3</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-yellow">15€</span>
+            </div>
+          </div>
+          <div class="t-right">
+            <span class="dist-badge">📍 23 km</span>
+            <span class="countdown">Dans 5j</span>
+          </div>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">1 équipe</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+      <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Groupes</div></div>
+      <div class="nav-item"><div class="nav-icon">🏆</div><div class="nav-label">Tournois</div></div>
+      <div class="nav-item"><div class="nav-icon">🔍</div><div class="nav-label" style="color:#1565C0;font-weight:800">Explorer</div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

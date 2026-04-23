@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option A — Résultats groupés par date</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:wght@700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565C0 100%);
+  min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+  padding: 32px 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+  gap: 32px; flex-wrap: wrap;
+}
+.label-outer { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin-bottom: 10px; }
+.phone {
+  width: 390px; height: 780px; background: #F5F8FF;
+  border-radius: 24px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+/* Header */
+.app-header { background: #1565C0; padding: 12px 16px 0; flex-shrink: 0; position: relative; z-index: 10; }
+.app-header::after { content: ''; display: block; height: 20px; background: #F5F8FF; clip-path: ellipse(56% 100% at 50% 100%); margin-top: -1px; }
+.header-row { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; }
+.header-title { font-size: 20px; font-weight: 800; color: white; }
+.av-header { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #AD1457, #F06292); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 800; border: 2px solid rgba(255,255,255,0.4); }
+
+/* Filter bar */
+.filter-bar { background: white; border-bottom: 1px solid #E8EEF4; padding: 10px 16px; flex-shrink: 0; }
+.filter-bar-row { display: flex; gap: 8px; align-items: center; }
+.search-wrap { flex: 1; background: white; border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); border: 1.5px solid #E8EEF4; }
+.search-wrap input { flex: 1; border: none; outline: none; font-size: 14px; color: #1A2440; font-family: inherit; background: transparent; }
+.search-icon { font-size: 15px; }
+.filter-pill { height: 44px; padding: 0 12px; border-radius: 12px; background: #E3F2FD; border: 1.5px solid #90CAF9; color: #1565C0; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; position: relative; }
+.filter-pill .badge { position: absolute; top: -7px; right: -7px; background: #E53935; color: white; font-size: 9px; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+
+/* Active chips */
+.chips-row { display: flex; gap: 6px; padding-top: 8px; overflow-x: auto; scrollbar-width: none; }
+.chip-active { display: inline-flex; align-items: center; gap: 5px; background: #E3F2FD; color: #1565C0; border: 1.5px solid #BBDEFB; border-radius: 20px; padding: 4px 6px 4px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.chip-active button { width: 16px; height: 16px; border-radius: 50%; background: #90CAF9; color: #1565C0; border: none; font-size: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+/* Content */
+.content { flex: 1; overflow-y: auto; padding: 12px 16px 80px; scrollbar-width: none; }
+.content::-webkit-scrollbar { display: none; }
+
+/* Date group headers */
+.date-group { margin-bottom: 4px; }
+.date-group-header { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; }
+.date-group-line { flex: 1; height: 1px; background: #E0E8F0; }
+.date-group-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #90A0B0; white-space: nowrap; }
+.date-group-count { font-size: 10px; font-weight: 600; color: #B0C0D0; background: #EEF4FF; border-radius: 10px; padding: 1px 7px; }
+
+/* Cards */
+.t-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 3px solid; cursor: pointer; transition: transform 0.12s; }
+.t-card:active { transform: scale(0.98); }
+.group-dot-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #90A0B0; font-weight: 600; margin-bottom: 4px; }
+.group-dot { width: 8px; height: 8px; border-radius: 50%; }
+.t-name { font-family: 'Fraunces', Georgia, serif; font-size: 16px; font-weight: 700; color: #1A2440; line-height: 1.2; }
+.t-meta { font-size: 12px; color: #788; margin-top: 3px; }
+.t-badges { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.b-blue { background: #E3F2FD; color: #1565C0; }
+.b-purple { background: #F3E5F5; color: #7B1FA2; }
+.b-yellow { background: #FFFDE7; color: #F57F17; }
+.b-green { background: #E8F5E9; color: #2E7D32; }
+.b-teal { background: #E0F7FA; color: #00695C; }
+.b-orange { background: #FFF3E0; color: #E65100; }
+.t-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.countdown { font-size: 11px; font-weight: 700; color: #E65100; background: #FFF3E0; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+.countdown.soon { color: #2E7D32; background: #E8F5E9; }
+
+/* Team in card */
+.team-section { border-top: 1px solid #E8EEF4; margin-top: 10px; padding-top: 10px; }
+.team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.team-name { font-size: 12px; font-weight: 700; color: #1565C0; }
+.team-count { font-size: 11px; color: #90A0B0; font-weight: 600; }
+.team-count.full { color: #2E7D32; }
+.team-avs { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.av-with-name { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 10px; border: 2px solid white; flex-shrink: 0; }
+.av-blue   { background: linear-gradient(135deg, #1565C0, #42A5F5); }
+.av-pink   { background: linear-gradient(135deg, #AD1457, #F06292); }
+.av-green  { background: linear-gradient(135deg, #2E7D32, #66BB6A); }
+.av-orange { background: linear-gradient(135deg, #E65100, #FFA726); }
+.av-purple { background: linear-gradient(135deg, #6A1B9A, #AB47BC); }
+.av-teal   { background: linear-gradient(135deg, #00695C, #26A69A); }
+.av-firstname { font-size: 9px; font-weight: 600; color: #546E7A; text-align: center; white-space: nowrap; }
+
+/* Card footer */
+.t-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #E8EEF4; }
+.t-footer-muted { font-size: 11px; color: #90A0B0; }
+.add-btn { font-size: 11px; font-weight: 700; color: #1565C0; background: #E3F2FD; border: 1.5px solid #BBDEFB; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+
+/* Nav */
+.bottom-nav { height: 64px; background: white; border-top: 1px solid #E8EEF4; display: flex; align-items: center; justify-content: space-around; flex-shrink: 0; padding: 0 8px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; cursor: pointer; padding: 8px 0; }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 10px; font-weight: 600; color: #B0C0D0; }
+.nav-label.active { color: #1565C0; }
+.nav-icon.active { filter: none; }
+
+/* No results / loading */
+.result-count { font-size: 12px; color: #90A0B0; font-weight: 600; padding: 4px 0 8px; }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="label-outer">Option A — Résultats groupés par date</div>
+  <div class="phone">
+    <!-- Header -->
+    <div class="app-header">
+      <div class="header-row">
+        <div class="header-title">Explorer</div>
+        <div class="av-header">GB</div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="filter-bar-row">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" value="Beach" placeholder="Nom, lieu, club…" readonly>
+        </div>
+        <div class="filter-pill">
+          <svg width="14" height="11" viewBox="0 0 14 11" fill="none"><path d="M1 1.5h12M3 5.5h8M5.5 9.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Filtres
+          <span class="badge">1</span>
+        </div>
+      </div>
+      <div class="chips-row">
+        <div class="chip-active">🏖️ Beach <button>✕</button></div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="result-count">5 résultats · filtres actifs</div>
+
+      <!-- CE WEEK-END -->
+      <div class="date-group-header">
+        <div class="date-group-line"></div>
+        <span class="date-group-label">Ce week-end</span>
+        <span class="date-group-count">2</span>
+        <div class="date-group-line"></div>
+      </div>
+
+      <div class="t-card" style="border-top-color: #1565C0;">
+        <div class="group-dot-row"><div class="group-dot" style="background:#1565C0"></div> Les Copains</div>
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Beach Masters Lyon</div>
+            <div class="t-meta">📅 Sam. 26 avr. · 09:00</div>
+            <div class="t-meta">📍 Parc de la Tête d'Or, Lyon</div>
+            <div class="t-badges">
+              <span class="badge b-blue">2x2</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-yellow">🏖️ Beach</span>
+              <span class="badge b-green">Gratuit</span>
+            </div>
+          </div>
+          <span class="countdown soon">Demain</span>
+        </div>
+        <div class="team-section">
+          <div class="team-header">
+            <span class="team-name">Les Sableux</span>
+            <span class="team-count full">2/2 ✓</span>
+          </div>
+          <div class="team-avs">
+            <div class="av-with-name"><div class="av av-blue">GB</div><span class="av-firstname">Grégoire</span></div>
+            <div class="av-with-name"><div class="av av-pink">ML</div><span class="av-firstname">Marie-Lou</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="t-card" style="border-top-color: #7B1FA2;">
+        <div class="group-dot-row"><div class="group-dot" style="background:#7B1FA2"></div> Team Volley</div>
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Open Beach Grenoble</div>
+            <div class="t-meta">📅 Dim. 27 avr. · 10:00</div>
+            <div class="t-meta">📍 Grenoble Plage</div>
+            <div class="t-badges">
+              <span class="badge b-blue">4x4</span>
+              <span class="badge b-orange">Masculin</span>
+              <span class="badge b-yellow">🏖️ Beach</span>
+              <span class="badge b-yellow">25€</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 2j</span>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">3 équipes</span>
+        </div>
+      </div>
+
+      <!-- CETTE SEMAINE -->
+      <div class="date-group-header">
+        <div class="date-group-line"></div>
+        <span class="date-group-label">Cette semaine</span>
+        <span class="date-group-count">1</span>
+        <div class="date-group-line"></div>
+      </div>
+
+      <div class="t-card" style="border-top-color: #2E7D32;">
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Beach Classic Annecy</div>
+            <div class="t-meta">📅 Mer. 30 avr. · 14:00</div>
+            <div class="t-meta">📍 Annecy-le-Vieux, Annecy</div>
+            <div class="t-badges">
+              <span class="badge b-blue">3x3</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-yellow">🏖️ Beach</span>
+              <span class="badge b-yellow">15€</span>
+            </div>
+          </div>
+          <span class="countdown">Dans 5j</span>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">1 équipe</span>
+        </div>
+      </div>
+
+      <!-- CE MOIS -->
+      <div class="date-group-header">
+        <div class="date-group-line"></div>
+        <span class="date-group-label">Ce mois</span>
+        <span class="date-group-count">2</span>
+        <div class="date-group-line"></div>
+      </div>
+
+      <div class="t-card" style="border-top-color: #E65100; opacity: 0.9;">
+        <div class="t-header">
+          <div style="flex:1;min-width:0">
+            <div class="t-name">Tournoi du Soleil Valence</div>
+            <div class="t-meta">📅 Sam. 10 mai · 09:00</div>
+            <div class="t-meta">📍 Valence-sur-Rhône</div>
+            <div class="t-badges">
+              <span class="badge b-blue">2x2</span>
+              <span class="badge b-teal">Mixte</span>
+              <span class="badge b-yellow">🏖️ Beach</span>
+              <span class="badge b-green">Gratuit</span>
+            </div>
+          </div>
+        </div>
+        <div class="t-footer">
+          <button class="add-btn">+ Mon groupe</button>
+          <span class="t-footer-muted">5 équipes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <div class="bottom-nav">
+      <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">Accueil</div></div>
+      <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Groupes</div></div>
+      <div class="nav-item"><div class="nav-icon">🏆</div><div class="nav-label">Tournois</div></div>
+      <div class="nav-item"><div class="nav-icon">🔍</div><div class="nav-label active" style="color:#1565C0;font-weight:800">Explorer</div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "id": "msg_001",
+      "text": "Défonce-les tous, c'est votre journée !",
+      "emoji": "🔥",
+      "gifUrl": "",
+      "conditions": {
+        "surface": [],
+        "gender": [],
+        "format": []
+      },
+      "enabled": true
+    }
+  ]
+}

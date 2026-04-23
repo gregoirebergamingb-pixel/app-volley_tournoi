@@ -451,8 +451,30 @@ app.get('/api/groups', verifyToken, async (req, res) => {
     const snapshot = await db.collection('groups')
       .where('members', 'array-contains', req.userId).get();
     const groups = [];
-    snapshot.forEach(doc => groups.push(doc.data()));
-    res.json(groups);
+    const allMemberIds = new Set();
+    snapshot.forEach(doc => {
+      const g = doc.data();
+      groups.push(g);
+      (g.members || []).forEach(id => allMemberIds.add(id));
+    });
+
+    const userMap = {};
+    if (allMemberIds.size > 0) {
+      const userDocs = await Promise.all([...allMemberIds].map(id => db.collection('users').doc(id).get()));
+      userDocs.forEach(doc => {
+        if (doc.exists) {
+          const u = doc.data();
+          userMap[u.id] = { id: u.id, firstName: u.firstName, lastName: u.lastName, avatarUrl: u.avatarUrl || null };
+        }
+      });
+    }
+
+    const result = groups.map(g => ({
+      ...g,
+      memberDetails: (g.members || []).map(id => userMap[id]).filter(Boolean),
+    }));
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -790,7 +812,7 @@ app.post('/api/tournaments/:tournamentId/add-to-group', verifyToken, async (req,
 // Créer une équipe dans un tournoi
 app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) => {
   try {
-    const { name, externalMembers = [] } = req.body;
+    const { name, externalMembers = [], visibility = 'open' } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Le nom de l'équipe est requis" });
     }
@@ -843,7 +865,8 @@ app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) =
       memberDetails: newMemberDetails,
       externalMembers: extSlots,
       maxSize: resolvedTeamSize,
-      averageLevel, averageLevelLabel
+      averageLevel, averageLevelLabel,
+      visibility: ['open', 'group_only'].includes(visibility) ? visibility : 'open'
     });
 
     res.json({ message: 'Équipe créée!', teamId: teamRef.id });
@@ -891,6 +914,19 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/join', verifyToken, async
     const team = await teamRef.get();
     if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
     const teamData = team.data();
+
+    // Vérifier la visibilité : group_only = doit partager un groupe avec le créateur
+    if (teamData.visibility === 'group_only' && teamData.creator !== req.userId) {
+      const creatorGroupsSnap = await db.collection('groups')
+        .where('members', 'array-contains', teamData.creator).get();
+      const creatorGroupIds = new Set(creatorGroupsSnap.docs.map(d => d.id));
+      const userGroupsSnap = await db.collection('groups')
+        .where('members', 'array-contains', req.userId).get();
+      const sharesGroup = userGroupsSnap.docs.some(d => creatorGroupIds.has(d.id));
+      if (!sharesGroup) {
+        return res.status(403).json({ error: 'Cette équipe est réservée aux membres des groupes du créateur' });
+      }
+    }
 
     const currentExternals = teamData.externalMembers || [];
     const totalOccupied = teamData.members.length + currentExternals.length;
@@ -987,17 +1023,110 @@ app.delete('/api/tournaments/:tournamentId/teams/:teamId/external/:extId', verif
   }
 });
 
-// Renommer une équipe (créateur seulement)
+// Modifier une équipe (nom + visibilité — créateur seulement)
 app.put('/api/tournaments/:tournamentId/teams/:teamId', verifyToken, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, visibility } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Le nom est requis' });
     const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
     const team = await teamRef.get();
     if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
-    if (team.data().creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut renommer l\'équipe' });
-    await teamRef.update({ name: name.trim() });
-    res.json({ message: 'Équipe renommée' });
+    if (team.data().creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut modifier l\'équipe' });
+    const update = { name: name.trim() };
+    if (visibility && ['open', 'group_only'].includes(visibility)) update.visibility = visibility;
+    await teamRef.update(update);
+    res.json({ message: 'Équipe modifiée' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Ajouter un membre directement (créateur seulement)
+app.post('/api/tournaments/:tournamentId/teams/:teamId/add-member', verifyToken, async (req, res) => {
+  try {
+    const { userId: targetId } = req.body;
+    if (!targetId) return res.status(400).json({ error: 'userId requis' });
+
+    const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
+    const [teamDoc, tournDoc] = await Promise.all([
+      teamRef.get(),
+      db.collection('tournaments').doc(req.params.tournamentId).get()
+    ]);
+    if (!teamDoc.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+    if (!tournDoc.exists) return res.status(404).json({ error: 'Tournoi non trouvé' });
+    const teamData = teamDoc.data();
+    const tournamentData = tournDoc.data();
+
+    if (teamData.creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut ajouter des membres' });
+    if (teamData.members.includes(targetId)) return res.status(400).json({ error: 'Ce joueur est déjà dans l\'équipe' });
+
+    const totalOccupied = teamData.members.length + (teamData.externalMembers || []).length;
+    if (totalOccupied >= teamData.maxSize) return res.status(400).json({ error: 'Équipe complète' });
+
+    const existingSnap = await db.collection('tournaments').doc(req.params.tournamentId)
+      .collection('teams').where('members', 'array-contains', targetId).get();
+    if (!existingSnap.empty) return res.status(400).json({ error: 'Ce joueur est déjà dans une équipe pour ce tournoi' });
+
+    const userDoc = await db.collection('users').doc(targetId).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'Joueur non trouvé' });
+    const userData = userDoc.data();
+
+    const eligibility = checkGenderEligibility(userData.gender, tournamentData.gender, teamData.memberDetails, teamData.maxSize);
+    if (!eligibility.allowed) return res.status(400).json({ error: eligibility.reason });
+
+    const updatedDetails = [...teamData.memberDetails, { id: targetId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level, avatarUrl: userData.avatarUrl || null }];
+    const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
+    await teamRef.update({ members: [...teamData.members, targetId], memberDetails: updatedDetails, averageLevel, averageLevelLabel });
+    res.json({ message: 'Membre ajouté' });
+  } catch (error) {
+    console.error('Erreur add-member:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Retirer un membre (créateur seulement, sauf soi-même)
+app.delete('/api/tournaments/:tournamentId/teams/:teamId/members/:userId', verifyToken, async (req, res) => {
+  try {
+    const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
+    const team = await teamRef.get();
+    if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+    const teamData = team.data();
+    if (teamData.creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut retirer des membres' });
+    if (req.params.userId === req.userId) return res.status(400).json({ error: 'Le créateur ne peut pas se retirer' });
+
+    const updatedMembers = teamData.members.filter(id => id !== req.params.userId);
+    const updatedDetails = (teamData.memberDetails || []).filter(m => m.id !== req.params.userId);
+    const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
+    await teamRef.update({ members: updatedMembers, memberDetails: updatedDetails, averageLevel, averageLevelLabel });
+    res.json({ message: 'Membre retiré' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Rechercher des utilisateurs
+app.get('/api/users/search', verifyToken, async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim().toLowerCase();
+    if (q.length < 2) return res.json([]);
+
+    const myGroupsSnap = await db.collection('groups').where('members', 'array-contains', req.userId).get();
+    const myGroupMemberIds = new Set();
+    myGroupsSnap.docs.forEach(d => (d.data().members || []).forEach(id => myGroupMemberIds.add(id)));
+
+    const usersSnap = await db.collection('users').get();
+    const results = [];
+    usersSnap.docs.forEach(doc => {
+      const u = doc.data();
+      if (u.id === req.userId) return;
+      const fn = (u.firstName || '').toLowerCase();
+      const ln = (u.lastName || '').toLowerCase();
+      if (fn.includes(q) || ln.includes(q) || `${fn} ${ln}`.includes(q)) {
+        results.push({ id: u.id, firstName: u.firstName, lastName: u.lastName, avatarUrl: u.avatarUrl || null, level: u.level, gender: u.gender, isGroupMember: myGroupMemberIds.has(u.id) });
+      }
+    });
+    results.sort((a, b) => (b.isGroupMember ? 1 : 0) - (a.isGroupMember ? 1 : 0));
+    res.json(results.slice(0, 20));
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }

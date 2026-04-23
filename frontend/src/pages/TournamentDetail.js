@@ -116,12 +116,17 @@ function TournamentDetail({ user }) {
   const [error, setError]             = useState('');
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamExternals, setNewTeamExternals] = useState([]);
+  const [newTeamVisibility, setNewTeamVisibility] = useState('open');
+  const [pendingMembers, setPendingMembers] = useState([]); // users to add after creation
   const [showCreateTeam, setShowCreateTeam] = useState(false);
-  const [renamingTeamId, setRenamingTeamId] = useState(null);
-  const [renameValue, setRenameValue] = useState('');
+  // Edit team modal
+  const [editingTeam, setEditingTeam]         = useState(null);
+  const [editTeamName, setEditTeamName]       = useState('');
+  const [editTeamVis, setEditTeamVis]         = useState('open');
   const [actionLoading, setActionLoading] = useState(false);
   const [searchQ, setSearchQ]           = useState('');
   const [levelFilters, setLevelFilters] = useState(new Set());
+  const [filtersOpen, setFiltersOpen]   = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Edit tournament
@@ -157,14 +162,29 @@ function TournamentDetail({ user }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Sync edit modal with latest team data after fetchData
+  useEffect(() => {
+    if (editingTeam) {
+      const updated = teams.find(t => t.id === editingTeam.id);
+      if (updated) setEditingTeam(updated);
+    }
+  }, [teams]); // eslint-disable-line
+
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     setActionLoading(true); setError('');
     try {
-      await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams`,
-        { name: newTeamName, externalMembers: newTeamExternals },
+      const res = await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams`,
+        { name: newTeamName, externalMembers: newTeamExternals, visibility: newTeamVisibility },
         { headers: { Authorization: `Bearer ${token}` } });
-      setNewTeamName(''); setNewTeamExternals([]); setShowCreateTeam(false); fetchData();
+      // Add pending members one by one
+      for (const m of pendingMembers) {
+        try {
+          await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${res.data.teamId}/add-member`,
+            { userId: m.id }, { headers: { Authorization: `Bearer ${token}` } });
+        } catch { /* ignore individual errors */ }
+      }
+      setNewTeamName(''); setNewTeamExternals([]); setNewTeamVisibility('open'); setPendingMembers([]); setShowCreateTeam(false); fetchData();
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la création');
     } finally { setActionLoading(false); }
@@ -205,14 +225,43 @@ function TournamentDetail({ user }) {
     } finally { setActionLoading(false); }
   };
 
-  const handleRenameTeam = async (e, teamId) => {
-    e.preventDefault();
-    if (!renameValue.trim()) return;
+  const openEditTeam = (team) => {
+    setEditingTeam(team);
+    setEditTeamName(team.name);
+    setEditTeamVis(team.visibility || 'open');
+  };
+
+  const handleSaveEditTeam = async () => {
+    if (!editTeamName.trim() || !editingTeam) return;
     setActionLoading(true);
     try {
-      await axios.put(`${API_URL}/api/tournaments/${tournamentId}/teams/${teamId}`,
-        { name: renameValue.trim() }, { headers: { Authorization: `Bearer ${token}` } });
-      setRenamingTeamId(null); fetchData();
+      await axios.put(`${API_URL}/api/tournaments/${tournamentId}/teams/${editingTeam.id}`,
+        { name: editTeamName.trim(), visibility: editTeamVis },
+        { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+      setEditingTeam(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleAddMember = async (teamId, userId) => {
+    setActionLoading(true);
+    try {
+      await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${teamId}/add-member`,
+        { userId }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleKickMember = async (teamId, userId) => {
+    setActionLoading(true);
+    try {
+      await axios.delete(`${API_URL}/api/tournaments/${tournamentId}/teams/${teamId}/members/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur');
     } finally { setActionLoading(false); }
@@ -309,7 +358,10 @@ function TournamentDetail({ user }) {
   });
 
   const filteredTeams = teams.filter(t => {
-    const nameMatch  = !searchQ || t.name.toLowerCase().includes(searchQ.toLowerCase());
+    const q = searchQ.toLowerCase();
+    const nameMatch = !searchQ ||
+      t.name.toLowerCase().includes(q) ||
+      (t.memberDetails || []).some(m => `${m.firstName} ${m.lastName}`.toLowerCase().includes(q));
     const levelMatch = levelFilters.size === 0 || Array.from(levelFilters).some(
       lv => (t.averageLevelLabel || '').toLowerCase() === (LEVEL_MAP[lv] || '').toLowerCase()
     );
@@ -418,7 +470,7 @@ function TournamentDetail({ user }) {
         </div>
       ) : (
         <div style={{ flexShrink: 0, padding: '8px 12px 0' }}>
-          <div className="tournament-info-grid" style={{ marginBottom: 8 }}>
+          <div className="tournament-info-grid" style={{ marginBottom: 8, gridTemplateColumns: '1fr 1fr auto' }}>
             <div className="info-cell">
               <span className="info-label">📅 Date</span>
               <span className="info-value">{dateStr}</span>
@@ -426,6 +478,27 @@ function TournamentDetail({ user }) {
             <div className="info-cell">
               <span className="info-label">🕐 Heure</span>
               <span className="info-value">{tournament.time}</span>
+            </div>
+            <div className="info-cell" style={{ position:'relative', overflow:'visible' }}>
+              <span className="info-label">📅 Calendrier</span>
+              <button className="button-secondary btn-sm" onClick={() => setShowCalendar(v => !v)} style={{ fontSize:11 }}>
+                + Ajouter
+              </button>
+              {showCalendar && (
+                <div style={{ position:'absolute', top:'100%', right:0, marginTop:4, background:'#fff',
+                  border:'1px solid #E0E8F4', borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
+                  zIndex:100, minWidth:180, overflow:'hidden' }}>
+                  <a href={googleCalUrl(tournament)} target="_blank" rel="noreferrer"
+                    style={{ display:'block', padding:'10px 14px', fontSize:13, color:'#1565C0', textDecoration:'none', borderBottom:'1px solid #F0F4FF' }}
+                    onClick={() => setShowCalendar(false)}>
+                    🗓 Google Calendar
+                  </a>
+                  <button style={{ display:'block', width:'100%', textAlign:'left', padding:'10px 14px', fontSize:13, color:'#445', background:'none', border:'none', cursor:'pointer' }}
+                    onClick={() => { downloadICS(tournament); setShowCalendar(false); }}>
+                    📥 Apple / Outlook (.ics)
+                  </button>
+                </div>
+              )}
             </div>
             <div className="info-cell" style={{ gridColumn: '1/-1' }}>
               <span className="info-label">📍 Lieu</span>
@@ -446,51 +519,43 @@ function TournamentDetail({ user }) {
               ? <span className="badge badge-yellow">{tournament.price}€</span>
               : <span className="badge badge-green">Gratuit</span>}
           </div>
-
-          {/* Add to calendar */}
-          <div style={{ position:'relative', display:'inline-block', marginBottom: 8 }}>
-            <button className="button-secondary btn-sm"
-              onClick={() => setShowCalendar(v => !v)}
-              style={{ fontSize:12 }}>
-              📅 Ajouter au calendrier
-            </button>
-            {showCalendar && (
-              <div style={{ position:'absolute', top:'100%', left:0, marginTop:4, background:'#fff',
-                border:'1px solid #E0E8F4', borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
-                zIndex:100, minWidth:180, overflow:'hidden' }}>
-                <a href={googleCalUrl(tournament)} target="_blank" rel="noreferrer"
-                  style={{ display:'block', padding:'10px 14px', fontSize:13, color:'#1565C0', textDecoration:'none', borderBottom:'1px solid #F0F4FF' }}
-                  onClick={() => setShowCalendar(false)}>
-                  🗓 Google Calendar
-                </a>
-                <button style={{ display:'block', width:'100%', textAlign:'left', padding:'10px 14px', fontSize:13, color:'#445', background:'none', border:'none', cursor:'pointer' }}
-                  onClick={() => { downloadICS(tournament); setShowCalendar(false); }}>
-                  📥 Apple / Outlook (.ics)
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       )}
 
-      <div style={{ flexShrink: 0, padding: '0 12px' }}>
-        <div className="search-bar">
-          <span className="search-bar-icon">🔍</span>
-          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Rechercher une équipe…" />
-          {searchQ && <button className="search-clear" onClick={() => setSearchQ('')}>✕</button>}
+      <div style={{ flexShrink: 0, padding: '0 12px 8px' }}>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <div className="search-bar" style={{ flex:1, margin:0 }}>
+            <span className="search-bar-icon">🔍</span>
+            <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Équipe ou joueur…" />
+            {searchQ && <button className="search-clear" onClick={() => setSearchQ('')}>✕</button>}
+          </div>
+          <button className={`filter-pill${levelFilters.size > 0 ? ' filter-pill-active' : ''}`}
+            onClick={() => setFiltersOpen(v => !v)} style={{ flexShrink:0 }}>
+            🎚 Filtres
+            {levelFilters.size > 0 && <span className="filter-pill-badge">{levelFilters.size}</span>}
+          </button>
         </div>
       </div>
 
-      <div className="chips-row">
-        <div className={`chip ${levelFilters.size === 0 ? 'active' : ''}`}
-          onClick={() => setLevelFilters(new Set())}>Tous</div>
-        {LEVEL_KEYS.map((lv, i) => (
-          <div key={lv} className={`chip ${levelFilters.has(lv) ? 'active' : ''}`}
-            onClick={() => toggleLevel(lv)}>
-            {LEVEL_CHIPS[i]}
+      {filtersOpen && (
+        <div className="filter-drawer-overlay" onClick={() => setFiltersOpen(false)}>
+          <div className="filter-drawer" onClick={e => e.stopPropagation()}>
+            <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', marginBottom:12 }}>Niveau de jeu</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              <button className={`chip${levelFilters.size === 0 ? ' active' : ''}`}
+                onClick={() => { setLevelFilters(new Set()); setFiltersOpen(false); }}>
+                Tous
+              </button>
+              {LEVEL_KEYS.map((lv, i) => (
+                <button key={lv} className={`chip${levelFilters.has(lv) ? ' active' : ''}`}
+                  onClick={() => toggleLevel(lv)}>
+                  {LEVEL_CHIPS[i]}
+                </button>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       <div className="page-content">
         {error && <div className="message error">{error}</div>}
@@ -516,6 +581,47 @@ function TournamentDetail({ user }) {
                   placeholder="ex: Les Volcans" required autoFocus />
               </div>
 
+              <div className="form-group">
+                <label>Qui peut rejoindre ?</label>
+                <div className="vis-toggle">
+                  <button type="button"
+                    className={`vis-pill${newTeamVisibility === 'open' ? ' vis-active' : ''}`}
+                    onClick={() => setNewTeamVisibility('open')}>
+                    🌍 Ouvert à tous
+                  </button>
+                  <button type="button"
+                    className={`vis-pill${newTeamVisibility === 'group_only' ? ' vis-active' : ''}`}
+                    onClick={() => setNewTeamVisibility('group_only')}>
+                    👥 Mes groupes uniquement
+                  </button>
+                </div>
+              </div>
+
+              {/* Player search — add app members directly */}
+              <div className="form-group">
+                <label>Ajouter des joueurs</label>
+                {pendingMembers.length > 0 && (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:8 }}>
+                    {pendingMembers.map(m => (
+                      <div key={m.id} style={{ display:'flex', alignItems:'center', gap:5, background:'#EEF4FF', borderRadius:20, padding:'3px 10px 3px 5px' }}>
+                        <div className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`} style={{ width:22, height:22, fontSize:10 }}>
+                          {m.avatarUrl ? <img src={m.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : initials(m.firstName, m.lastName)}
+                        </div>
+                        <span style={{ fontSize:12, fontWeight:600, color:'var(--primary)' }}>{m.firstName}</span>
+                        <button type="button" style={{ background:'none', border:'none', cursor:'pointer', color:'#90A0B0', fontSize:13, padding:0, lineHeight:1, marginLeft:2 }}
+                          onClick={() => setPendingMembers(prev => prev.filter(x => x.id !== m.id))}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <PlayerSearch
+                  token={token}
+                  excludeIds={[user.id, ...pendingMembers.map(m => m.id)]}
+                  onSelect={(u) => setPendingMembers(prev => [...prev, u])}
+                  placeholder="Rechercher par prénom ou nom…"
+                />
+              </div>
+
               {maxExternalsCreate > 0 && (
                 <div className="form-group">
                   <label>Joueurs externes (sans compte)</label>
@@ -536,7 +642,7 @@ function TournamentDetail({ user }) {
                   {actionLoading ? 'Création…' : `Créer (${1 + newTeamExternals.length} place${1+newTeamExternals.length>1?'s':''})`}
                 </button>
                 <button type="button" className="button-secondary"
-                  onClick={() => { setShowCreateTeam(false); setNewTeamName(''); setNewTeamExternals([]); }}>
+                  onClick={() => { setShowCreateTeam(false); setNewTeamName(''); setNewTeamExternals([]); setNewTeamVisibility('open'); setPendingMembers([]); }}>
                   Annuler
                 </button>
               </div>
@@ -552,14 +658,10 @@ function TournamentDetail({ user }) {
               isMyTeam={true}
               user={user}
               tournament={tournament}
-              renamingTeamId={renamingTeamId}
-              renameValue={renameValue}
-              setRenamingTeamId={setRenamingTeamId}
-              setRenameValue={setRenameValue}
               onJoin={handleJoinTeam}
               onLeave={handleLeaveTeam}
               onDelete={handleDeleteTeam}
-              onRename={handleRenameTeam}
+              onEdit={openEditTeam}
               onRemoveExternal={handleRemoveExternal}
               actionLoading={actionLoading}
               myTeam={myTeam}
@@ -577,14 +679,10 @@ function TournamentDetail({ user }) {
                 isMyTeam={false}
                 user={user}
                 tournament={tournament}
-                renamingTeamId={renamingTeamId}
-                renameValue={renameValue}
-                setRenamingTeamId={setRenamingTeamId}
-                setRenameValue={setRenameValue}
                 onJoin={handleJoinTeam}
                 onLeave={handleLeaveTeam}
                 onDelete={handleDeleteTeam}
-                onRename={handleRenameTeam}
+                onEdit={openEditTeam}
                 onRemoveExternal={handleRemoveExternal}
                 actionLoading={actionLoading}
                 myTeam={myTeam}
@@ -609,21 +707,209 @@ function TournamentDetail({ user }) {
         )}
       </div>
 
+      {/* ── Edit team modal ── */}
+      {editingTeam && (
+        <EditTeamModal
+          team={editingTeam}
+          name={editTeamName}
+          setName={setEditTeamName}
+          visibility={editTeamVis}
+          setVisibility={setEditTeamVis}
+          onSave={handleSaveEditTeam}
+          onClose={() => setEditingTeam(null)}
+          onAddMember={(userId) => handleAddMember(editingTeam.id, userId)}
+          onKickMember={(userId) => handleKickMember(editingTeam.id, userId)}
+          onRemoveExternal={(extId) => handleRemoveExternal(editingTeam.id, extId)}
+          actionLoading={actionLoading}
+          user={user}
+          token={token}
+        />
+      )}
     </>
   );
 }
 
-function TeamCard({ team, isMyTeam, user, tournament, renamingTeamId, renameValue,
-  setRenamingTeamId, setRenameValue, onJoin, onLeave, onDelete, onRename, onRemoveExternal,
-  actionLoading, myTeam }) {
+function PlayerSearch({ token, onSelect, excludeIds = [], placeholder }) {
+  const [q, setQ]           = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef(null);
+
+  const search = (val) => {
+    setQ(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (val.trim().length < 2) { setResults([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(`${API_URL}/api/users/search?q=${encodeURIComponent(val.trim())}`,
+          { headers: { Authorization: `Bearer ${token}` } });
+        setResults(res.data.filter(u => !excludeIds.includes(u.id)));
+      } catch { setResults([]); } finally { setLoading(false); }
+    }, 300);
+  };
+
+  const handleSelect = (u) => { onSelect(u); setQ(''); setResults([]); };
+
+  return (
+    <div>
+      <div className="player-search-wrap">
+        <span style={{ fontSize:14, marginLeft:2, color:'#90A0B0' }}>🔍</span>
+        <input value={q} onChange={e => search(e.target.value)}
+          placeholder={placeholder || 'Prénom ou nom…'}
+          style={{ flex:1, border:'none', outline:'none', fontSize:13, background:'transparent' }} />
+        {q && <button className="search-clear" style={{ position:'static' }}
+          onClick={() => { setQ(''); setResults([]); }}>✕</button>}
+      </div>
+      {loading && <div style={{ fontSize:12, color:'#90A0B0', padding:'4px 0' }}>Recherche…</div>}
+      {results.length > 0 && (
+        <div className="player-search-results">
+          {results.map(u => (
+            <div key={u.id} className="player-search-item" onClick={() => handleSelect(u)}>
+              <div className={`av-circle av-sm ${!u.avatarUrl ? avatarColor(u.id) : ''}`} style={{ flexShrink:0 }}>
+                {u.avatarUrl
+                  ? <img src={u.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  : initials(u.firstName, u.lastName)}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:600, color:'#334' }}>
+                  {u.firstName} {u.lastName}
+                  {u.isGroupMember && <span style={{ fontSize:10, color:'var(--primary)', fontWeight:700, marginLeft:4 }}>· Groupe</span>}
+                </div>
+                {u.level && <div style={{ fontSize:11, color:'#90A0B0' }}>{u.level}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditTeamModal({ team, name, setName, visibility, setVisibility, onSave, onClose,
+  onAddMember, onKickMember, onRemoveExternal, actionLoading, user, token }) {
+
+  const [replacingExtId, setReplacingExtId] = useState(null);
+  const externals   = team.externalMembers || [];
+  const totalOccupied = team.members.length + externals.length;
+  const spotsLeft   = team.maxSize - totalOccupied;
+
+  const handleReplaceExternal = async (extId, newUserId) => {
+    await onRemoveExternal(extId);
+    await onAddMember(newUserId);
+    setReplacingExtId(null);
+  };
+
+  return (
+    <div className="team-edit-overlay" onClick={onClose}>
+      <div className="team-edit-sheet" onClick={e => e.stopPropagation()}>
+        <div className="team-edit-handle" />
+        <div style={{ fontSize:17, fontWeight:800, color:'var(--text)', marginBottom:16 }}>Modifier l'équipe</div>
+
+        {/* Name */}
+        <div className="form-group">
+          <label>Nom de l'équipe</label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} />
+        </div>
+
+        {/* Visibility */}
+        <div className="form-group">
+          <label>Qui peut rejoindre ?</label>
+          <div className="vis-toggle">
+            <button type="button" className={`vis-pill${visibility === 'open' ? ' vis-active' : ''}`}
+              onClick={() => setVisibility('open')}>🌍 Ouvert à tous</button>
+            <button type="button" className={`vis-pill${visibility === 'group_only' ? ' vis-active' : ''}`}
+              onClick={() => setVisibility('group_only')}>👥 Mes groupes uniquement</button>
+          </div>
+        </div>
+
+        {/* Current members */}
+        <div className="form-group">
+          <label>Membres ({totalOccupied}/{team.maxSize})</label>
+          {team.memberDetails.map(m => (
+            <div key={m.id} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+              <div className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`} style={{ flexShrink:0 }}>
+                {m.avatarUrl ? <img src={m.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : initials(m.firstName, m.lastName)}
+              </div>
+              <span style={{ flex:1, fontSize:13, fontWeight:600 }}>
+                {m.firstName} {m.lastName}
+                {m.id === user.id && <span style={{ fontSize:10, color:'var(--primary)', marginLeft:4 }}>Moi</span>}
+                {m.id === team.creator && <span style={{ fontSize:10, color:'#90A0B0', marginLeft:4 }}>Créateur</span>}
+              </span>
+              {m.id !== user.id && m.id !== team.creator && (
+                <button className="button-danger btn-sm" style={{ padding:'2px 8px' }}
+                  disabled={actionLoading} onClick={() => onKickMember(m.id)}>✕</button>
+              )}
+            </div>
+          ))}
+
+          {/* External members */}
+          {externals.map(ext => (
+            <div key={ext.id} style={{ marginBottom:6 }}>
+              {replacingExtId === ext.id ? (
+                <div>
+                  <div style={{ fontSize:12, color:'#607080', marginBottom:6 }}>
+                    Remplacer <em>{ext.name || 'joueur externe'}</em> par :
+                  </div>
+                  <PlayerSearch
+                    token={token}
+                    excludeIds={team.members}
+                    onSelect={(u) => handleReplaceExternal(ext.id, u.id)}
+                    placeholder="Rechercher un joueur…"
+                  />
+                  <button type="button" className="button-secondary btn-sm" style={{ marginTop:4 }}
+                    onClick={() => setReplacingExtId(null)}>Annuler</button>
+                </div>
+              ) : (
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div className="av-circle av-sm" style={{ background:'#E8EEF8', border:'1.5px dashed #AAB8CC', fontSize:14, flexShrink:0 }}>👤</div>
+                  <span style={{ flex:1, fontSize:13, color:'#90A0B0', fontStyle:'italic' }}>{ext.name || 'Joueur externe'}</span>
+                  <button className="button-secondary btn-sm" style={{ fontSize:11 }}
+                    onClick={() => setReplacingExtId(ext.id)}>Remplacer</button>
+                  <button className="button-danger btn-sm" style={{ padding:'2px 8px' }}
+                    disabled={actionLoading} onClick={() => onRemoveExternal(ext.id)}>✕</button>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Add member search */}
+          {spotsLeft > 0 && !replacingExtId && (
+            <div style={{ marginTop:8 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#90A0B0', textTransform:'uppercase', marginBottom:6 }}>
+                Ajouter un joueur ({spotsLeft} place{spotsLeft > 1 ? 's' : ''})
+              </div>
+              <PlayerSearch
+                token={token}
+                excludeIds={team.members}
+                onSelect={(u) => onAddMember(u.id)}
+                placeholder="Rechercher par prénom ou nom…"
+              />
+            </div>
+          )}
+        </div>
+
+        <div style={{ display:'flex', gap:8, marginTop:4 }}>
+          <button disabled={actionLoading} onClick={onSave} style={{ flex:1 }}>
+            {actionLoading ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          <button className="button-secondary" onClick={onClose}>Annuler</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TeamCard({ team, isMyTeam, user, tournament, onJoin, onLeave, onDelete, onEdit,
+  onRemoveExternal, actionLoading, myTeam }) {
 
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [joinExternals, setJoinExternals] = useState([]);
 
-  const isCreator   = team.creator === user.id;
-  const externals   = team.externalMembers || [];
+  const isCreator     = team.creator === user.id;
+  const externals     = team.externalMembers || [];
   const totalOccupied = team.members.length + externals.length;
-  const isFull      = totalOccupied >= team.maxSize;
+  const isFull        = totalOccupied >= team.maxSize;
   const spotsLeft   = team.maxSize - totalOccupied;
   const blockReason = !isMyTeam && !myTeam ? getJoinBlockReason(user, tournament, team) : null;
   const canJoin     = !myTeam && !blockReason;
@@ -641,25 +927,17 @@ function TeamCard({ team, isMyTeam, user, tournament, renamingTeamId, renameValu
 
   return (
     <div className={`team-card ${isMyTeam ? 'team-card-mine' : ''}`}>
-      {/* Rename form */}
-      {renamingTeamId === team.id ? (
-        <form onSubmit={(e) => onRename(e, team.id)} style={{ marginBottom:'10px' }}>
-          <div style={{ display:'flex', gap:'8px' }}>
-            <input type="text" value={renameValue} onChange={e => setRenameValue(e.target.value)}
-              required autoFocus style={{ flex:1, padding:'6px 10px', fontSize:14 }} />
-            <button type="submit" disabled={actionLoading} className="btn-sm">OK</button>
-            <button type="button" className="button-secondary btn-sm"
-              onClick={() => setRenamingTeamId(null)}>✕</button>
-          </div>
-        </form>
-      ) : (
-        <div className="team-header">
-          <h3>{team.name}</h3>
+      <div className="team-header">
+        <h3>{team.name}</h3>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          {team.visibility === 'group_only' && (
+            <span className="vis-badge">👥 Groupes</span>
+          )}
           <span className={`team-spots ${isFull ? 'full' : ''}`}>
             {isFull ? 'Complet' : `${spotsLeft} place${spotsLeft > 1 ? 's' : ''}`}
           </span>
         </div>
-      )}
+      </div>
 
       {/* Members */}
       <div style={{ display:'flex', flexDirection:'column', gap:'5px', marginBottom:'8px' }}>
@@ -711,26 +989,18 @@ function TeamCard({ team, isMyTeam, user, tournament, renamingTeamId, renameValu
       )}
 
       {/* Actions */}
-      <div className="team-actions">
+      <div className="team-actions" style={{ justifyContent:'flex-end' }}>
         {isMyTeam ? (
           <>
             {isCreator && (
               <>
-                <button className="button-secondary btn-sm"
-                  onClick={() => { setRenamingTeamId(team.id); setRenameValue(team.name); }}>
-                  Renommer
-                </button>
-                <button className="button-danger btn-sm" disabled={actionLoading}
-                  onClick={() => onDelete(team)}>
-                  Supprimer
-                </button>
+                <button className="button-secondary btn-sm" onClick={() => onEdit(team)}>Modifier</button>
+                <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(team)}>Supprimer</button>
               </>
             )}
             {!isCreator && (
               <button className="button-danger btn-sm" disabled={actionLoading}
-                onClick={() => onLeave(team.id)}>
-                Quitter
-              </button>
+                onClick={() => onLeave(team.id)}>Quitter</button>
             )}
           </>
         ) : canJoin ? (

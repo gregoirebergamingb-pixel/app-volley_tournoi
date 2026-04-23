@@ -8,12 +8,12 @@ const SURFACE_BADGE  = { green: 'badge-green', beach: 'badge-yellow', gymnase: '
 const AV_COLORS = ['av-blue','av-pink','av-green','av-orange','av-purple','av-teal','av-red','av-indigo'];
 const GROUP_COLORS = ['#1565C0','#E65100','#7B1FA2','#2E7D32','#C62828','#00695C','#283593','#AD1457'];
 
-function avatarColor(id) {
+export function avatarColor(id) {
   let h = 0;
   for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) & 0xFFFFFF;
   return AV_COLORS[Math.abs(h) % AV_COLORS.length];
 }
-function initials(firstName, lastName) {
+export function initials(firstName, lastName) {
   const f = (firstName || '').trim();
   const l = (lastName || '').trim();
   if (f && l) return (f[0] + l[0]).toUpperCase();
@@ -43,18 +43,69 @@ export function shortLocation(loc) {
   return clean.slice(0, 3).join(', ');
 }
 
-const MAX_VISIBLE = 4;
+const MAX_VISIBLE = 5;
+
+function TeamSection({ teamName, memberDetails, externalMembers, filled, maxSize, isComplete }) {
+  const visible  = (memberDetails || []).slice(0, MAX_VISIBLE);
+  const overflow = Math.max(0, (memberDetails || []).length - MAX_VISIBLE);
+  const missing  = maxSize - filled;
+
+  return (
+    <div className="team-in-card">
+      <div className="team-in-card-header">
+        <span className="team-in-card-name">{teamName}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="team-in-card-avatars" style={{ flex: 1, minWidth: 0 }}>
+          {visible.map(m => (
+            <div key={m.id} className="team-avatar-with-name">
+              <div className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}>
+                {m.avatarUrl
+                  ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : initials(m.firstName, m.lastName)
+                }
+              </div>
+              <span className="team-avatar-firstname">{(m.firstName || '?').split(' ')[0]}</span>
+            </div>
+          ))}
+          {(externalMembers || []).map((ext, i) => (
+            <div key={ext.id || i} className="team-avatar-with-name">
+              <div className="av-circle av-sm"
+                style={{ background: '#E8EEF8', border: '1.5px dashed #AAB8CC', fontSize: 10, color: '#90A0B0', fontWeight: 700 }}>
+                +1
+              </div>
+              <span className="team-avatar-firstname" style={{ color: '#90A0B0' }}>ext.</span>
+            </div>
+          ))}
+          {overflow > 0 && (
+            <div className="team-avatar-with-name">
+              <div className="av-circle av-sm" style={{ background: '#E0E8F4', color: '#445', fontWeight: 700, fontSize: 10 }}>
+                +{overflow}
+              </div>
+              <span className="team-avatar-firstname" style={{ color: '#90A0B0' }}>+{overflow}</span>
+            </div>
+          )}
+        </div>
+        <span className={`team-status-pill ${isComplete ? 'team-status-complete' : 'team-status-incomplete'}`}>
+          {isComplete
+            ? 'Équipe complète !'
+            : `Manque ${missing} joueur${missing > 1 ? 's' : ''}`}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // Props:
-//   tournament     — required: { id, name, date, time, location, playerFormat, format, gender, surface, price }
-//   group          — optional: { id, name } — shows colored source dot
-//   team           — optional: full team { name, members, memberDetails, maxSize } (Dashboard)
-//   myTeam         — optional: basic team { name, members, maxSize } (NosTournois)
-//   showTeamStatus — show my-team-indicator section (NosTournois context, shows warning if no myTeam)
-//   teamCount      — optional: number shown in footer
+//   tournament     — required
+//   group          — optional: { id, name }
+//   team           — optional: full team { name, members, memberDetails, maxSize }
+//   myTeam         — optional: { name, members, memberDetails, externalMembers, maxSize }
+//   showTeamStatus — show team section or warning (Dashboard)
+//   teamCount      — optional: number
 //   past           — boolean
-//   isCreator      — boolean: show edit/delete buttons
-//   onEdit, onDelete, actionLoading — creator callbacks
+//   isCreator      — boolean
+//   onEdit, onDelete, actionLoading, onAddToGroup
 function TournamentCard({
   tournament,
   group,
@@ -79,15 +130,17 @@ function TournamentCard({
     ? new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
     : '';
 
-  const hasFullTeam = !!(team && team.memberDetails);
-  const filled   = hasFullTeam ? team.members.length : 0;
-  const maxSize  = hasFullTeam ? team.maxSize : 0;
-  const complete = hasFullTeam && filled >= maxSize;
-  const visible  = hasFullTeam ? team.memberDetails.slice(0, MAX_VISIBLE) : [];
-  const overflow = hasFullTeam ? Math.max(0, team.memberDetails.length - MAX_VISIBLE) : 0;
+  const hasFullTeam  = !!(team && team.memberDetails);
+  const fullFilled   = hasFullTeam ? team.members.length : 0;
+  const fullMaxSize  = hasFullTeam ? team.maxSize : 0;
+  const fullComplete = hasFullTeam && fullFilled >= fullMaxSize;
 
   const myTeamFilled   = (myTeam?.members?.length || 0) + (myTeam?.externalMembers?.length || 0);
   const myTeamComplete = !!(myTeam && myTeamFilled >= myTeam.maxSize);
+
+  const showAddToGroup = !isCreator && !!onAddToGroup;
+  const showTeamCount  = !isCreator && teamCount !== undefined;
+  const hasFooter      = isCreator || showAddToGroup || showTeamCount;
 
   return (
     <Link to={`/tournaments/${tournament.id}`} className="team-entry-link">
@@ -125,73 +178,43 @@ function TournamentCard({
           }
         </div>
 
-        {/* Full team section (Dashboard) */}
+        {/* Full team section (team prop avec memberDetails) */}
         {hasFullTeam && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0 4px', flexWrap: 'wrap' }}>
-            {visible.map(m => (
-              <div key={m.id} className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}>
-                {m.avatarUrl
-                  ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : initials(m.firstName, m.lastName)
-                }
-              </div>
-            ))}
-            {overflow > 0 && (
-              <div className="av-circle av-sm" style={{ background: '#E0E8F4', color: '#445', fontWeight: 700, fontSize: 10 }}>
-                +{overflow}
-              </div>
-            )}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0, marginLeft: 2 }}>
-              <span style={{ fontSize: 12, color: '#445', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {team.name}
-              </span>
-              <span style={{ fontSize: 11, color: complete ? '#2E7D32' : '#90A0B0', fontWeight: 600, flexShrink: 0, marginLeft: 4 }}>
-                {filled}/{maxSize}{complete ? ' ✓' : ''}
-              </span>
-            </div>
+          <TeamSection
+            teamName={team.name}
+            memberDetails={team.memberDetails}
+            externalMembers={[]}
+            filled={fullFilled}
+            maxSize={fullMaxSize}
+            isComplete={fullComplete}
+          />
+        )}
+
+        {/* Mon équipe section (myTeam prop) */}
+        {showTeamStatus && !hasFullTeam && myTeam && (
+          <TeamSection
+            teamName={myTeam.name}
+            memberDetails={myTeam.memberDetails}
+            externalMembers={myTeam.externalMembers}
+            filled={myTeamFilled}
+            maxSize={myTeam.maxSize}
+            isComplete={myTeamComplete}
+          />
+        )}
+
+        {/* Avertissement : pas d'équipe */}
+        {showTeamStatus && !hasFullTeam && !myTeam && !past && (
+          <div className="my-team-indicator warn">
+            <span style={{ fontSize: 12 }}>⚠️</span>
+            <span className="my-team-indicator-label">Pas encore inscrit dans une équipe</span>
           </div>
         )}
 
-        {/* My team indicator */}
-        {showTeamStatus && !hasFullTeam && (
-          myTeam ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 0 4px', flexWrap: 'wrap' }}>
-              {(myTeam.memberDetails || []).slice(0, MAX_VISIBLE).map(m => (
-                <div key={m.id} className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}>
-                  {m.avatarUrl
-                    ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : initials(m.firstName, m.lastName)
-                  }
-                </div>
-              ))}
-              {(myTeam.externalMembers || []).map((ext, i) => (
-                <div key={ext.id || i} className="av-circle av-sm"
-                  style={{ background: '#E8EEF8', border: '1.5px dashed #AAB8CC', fontSize: 10, color: '#90A0B0', fontWeight: 700 }}>
-                  +1
-                </div>
-              ))}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0, marginLeft: 2 }}>
-                <span style={{ fontSize: 12, color: '#445', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {myTeam.name}
-                </span>
-                <span style={{ fontSize: 11, color: myTeamComplete ? '#2E7D32' : '#90A0B0', fontWeight: 600, flexShrink: 0, marginLeft: 4 }}>
-                  {myTeamFilled}/{myTeam.maxSize}{myTeamComplete ? ' ✓' : ''}
-                </span>
-              </div>
-            </div>
-          ) : !past ? (
-            <div className="my-team-indicator warn">
-              <span style={{ fontSize: 12 }}>⚠️</span>
-              <span className="my-team-indicator-label">Pas encore inscrit dans une équipe</span>
-            </div>
-          ) : null
-        )}
-
         {/* Footer */}
-        <div className="t-card-footer">
-          {isCreator ? (
-            <>
-              <div style={{ display: 'flex', gap: '6px' }}
+        {hasFooter && (
+          <div className="t-card-footer">
+            {isCreator ? (
+              <div style={{ display: 'flex', gap: 6 }}
                 onClick={e => { e.preventDefault(); e.stopPropagation(); }}>
                 <button className="button-secondary btn-sm"
                   onClick={e => { e.preventDefault(); e.stopPropagation(); onEdit(tournament); }}>
@@ -202,31 +225,23 @@ function TournamentCard({
                   Supprimer
                 </button>
               </div>
-              <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}
-                onClick={e => e.stopPropagation()}>Voir →</span>
-            </>
-          ) : hasFullTeam ? (
-            <>
-              <span style={{ fontSize: 11, color: '#90A0B0' }}>👥 {group?.name}</span>
-              <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>Voir l'équipe →</span>
-            </>
-          ) : (
-            <>
-              {onAddToGroup && (
-                <button className="button-secondary btn-sm"
-                  style={{ fontSize: 11 }}
-                  onClick={e => { e.preventDefault(); e.stopPropagation(); onAddToGroup(tournament); }}>
-                  + Mon groupe
-                </button>
-              )}
-              {teamCount !== undefined
-                ? <span style={{ fontSize: 11, color: '#90A0B0' }}>🏐 {teamCount} équipe{teamCount !== 1 ? 's' : ''}</span>
-                : <span></span>
-              }
-              <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600 }}>Voir →</span>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                {showAddToGroup && (
+                  <button className="button-secondary btn-sm" style={{ fontSize: 11 }}
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); onAddToGroup(tournament); }}>
+                    + Mon groupe
+                  </button>
+                )}
+                {showTeamCount && (
+                  <span style={{ fontSize: 11, color: '#90A0B0', marginLeft: 'auto' }}>
+                    {teamCount} équipe{teamCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </Link>
   );

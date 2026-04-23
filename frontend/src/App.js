@@ -10,11 +10,11 @@ import GroupDetail from './pages/GroupDetail';
 import CreateTournament from './pages/CreateTournament';
 import CreateTournamentWizard from './pages/CreateTournamentWizard';
 import TournamentDetail from './pages/TournamentDetail';
-import NosTournois from './pages/NosTournois';
 import TournamentSearch from './pages/TournamentSearch';
 import JoinGroup from './pages/JoinGroup';
 import Profile from './pages/Profile';
 import Navigation from './components/Navigation';
+import OnboardingTour from './components/OnboardingTour';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -22,6 +22,9 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser]             = useState(null);
   const [loading, setLoading]       = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !!localStorage.getItem('token') && !localStorage.getItem('onboarding_done')
+  );
 
   useEffect(() => {
     const token    = localStorage.getItem('token');
@@ -45,6 +48,7 @@ function App() {
     localStorage.setItem('user', JSON.stringify(userData));
     setIsLoggedIn(true);
     setUser(userData);
+    if (!localStorage.getItem('onboarding_done')) setShowOnboarding(true);
   };
 
   const handleLogout = () => {
@@ -79,7 +83,6 @@ function App() {
               <Route path="/groups/:groupId"    element={<GroupDetail      user={user} />} />
               <Route path="/groups/:groupId/tournament/create" element={<CreateTournament user={user} />} />
               <Route path="/tournaments/:tournamentId"         element={<TournamentDetail user={user} />} />
-              <Route path="/nos-tournois"       element={<NosTournois      user={user} onLogout={handleLogout} />} />
               <Route path="/creer"              element={<CreateTournamentWizard user={user} />} />
               <Route path="/recherche"          element={<TournamentSearch user={user} onLogout={handleLogout} />} />
               <Route path="/profile"            element={<Profile          user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />} />
@@ -91,6 +94,9 @@ function App() {
         </Routes>
 
         {isLoggedIn && <Navigation />}
+        {isLoggedIn && showOnboarding && (
+          <OnboardingTour onDone={() => setShowOnboarding(false)} />
+        )}
       </div>
     </Router>
   );

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DDay Message Editor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1565C0;
+    --primary-light: #42A5F5;
+    --bg: #F5F8FF;
+    --border: #E0E8F4;
+    --text: #1A2440;
+    --muted: #788899;
+    --danger: #C62828;
+    --success: #2E7D32;
+    --radius: 10px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── Header ── */
+  .topbar {
+    background: var(--primary); color: white;
+    padding: 14px 24px; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+  }
+  .topbar-title { font-size: 16px; font-weight: 700; }
+  .topbar-sub   { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .topbar-actions { display: flex; gap: 8px; }
+  .btn { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-white { background: white; color: var(--primary); }
+  .btn-outline { background: transparent; color: white; border: 1.5px solid rgba(255,255,255,0.5); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-danger  { background: #FFEBEE; color: var(--danger); }
+  .btn-success { background: #E8F5E9; color: var(--success); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+  /* ── Layout ── */
+  .layout { display: grid; grid-template-columns: 300px 1fr 300px; gap: 0; height: calc(100vh - 54px); }
+
+  /* ── Sidebar gauche : liste ── */
+  .sidebar {
+    background: white; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .sidebar-header h2 { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .msg-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .msg-item {
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    border: 1.5px solid transparent; margin-bottom: 4px;
+    transition: all 0.12s;
+  }
+  .msg-item:hover { background: var(--bg); }
+  .msg-item.selected { border-color: var(--primary); background: #EEF4FF; }
+  .msg-item-text { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg-item-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+  .tag-enabled  { background: #E8F5E9; color: var(--success); }
+  .tag-disabled { background: #FFEBEE; color: var(--danger); }
+  .tag-cond     { background: #E3F2FD; color: var(--primary); }
+  .tag-all      { background: #F3E5F5; color: #7B1FA2; }
+
+  /* ── Formulaire central ── */
+  .editor {
+    padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px;
+  }
+  .editor-empty {
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px; height: 100%;
+    color: var(--muted); font-size: 14px;
+  }
+  .editor-empty-icon { font-size: 48px; }
+  .form-section { background: white; border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
+  .form-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--muted); margin-bottom: 12px;
+  }
+  .form-row { margin-bottom: 12px; }
+  .form-row:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 13px; color: var(--text); background: white; font-family: inherit; outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--primary); }
+  textarea { resize: vertical; min-height: 70px; }
+  .emoji-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .emoji-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border);
+    font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    background: white; transition: all 0.12s;
+  }
+  .emoji-btn:hover, .emoji-btn.active { border-color: var(--primary); background: #EEF4FF; }
+
+  /* Conditions checkboxes */
+  .cond-group { margin-bottom: 10px; }
+  .cond-group-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+  .cond-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cond-pill {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+    font-size: 12px; font-weight: 600; cursor: pointer; background: white; color: #546E7A;
+    transition: all 0.12s; user-select: none;
+  }
+  .cond-pill:hover { border-color: #90CAF9; background: #F0F7FF; }
+  .cond-pill.active { background: var(--primary); border-color: var(--primary); color: white; }
+  .cond-all-note { font-size: 11px; color: var(--muted); font-style: italic; margin-top: 6px; }
+
+  /* Toggle enabled */
+  .toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle { position: relative; width: 42px; height: 24px; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; border-radius: 24px;
+    background: #D0D8E8; transition: 0.2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    left: 3px; bottom: 3px; background: white; transition: 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle input:checked + .toggle-slider { background: var(--primary); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+  .toggle-label { font-size: 13px; font-weight: 500; }
+
+  .form-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+
+  /* ── Panneau prévisualisation ── */
+  .preview-panel {
+    background: #1A2440; border-left: 1px solid rgba(255,255,255,0.08);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .preview-header {
+    padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .preview-phone {
+    flex: 1; display: flex; align-items: flex-end; justify-content: center;
+    padding: 20px 20px 32px;
+  }
+  .phone-frame {
+    width: 260px; background: white; border-radius: 20px;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .phone-sheet { padding: 14px 16px 20px; }
+  .phone-handle { width: 32px; height: 3px; background: #D0D8E8; border-radius: 4px; margin: 0 auto 14px; }
+  .phone-badge-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .phone-fire { font-size: 20px; }
+  .phone-badge {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #E53935; background: #FFEBEE;
+    border-radius: 5px; padding: 2px 6px;
+  }
+  .phone-media {
+    width: 100%; height: 70px; border-radius: 10px; margin-bottom: 10px;
+    background: linear-gradient(135deg, #E3F2FD, #F3E5F5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; overflow: hidden;
+  }
+  .phone-media img { width: 100%; height: 100%; object-fit: cover; }
+  .phone-text {
+    font-size: 14px; font-weight: 700; color: #1A2440; text-align: center;
+    line-height: 1.3; margin-bottom: 10px; font-family: Georgia, serif;
+  }
+  .phone-info {
+    background: #F5F8FF; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px;
+  }
+  .phone-info-name { font-size: 11px; font-weight: 700; color: #1A2440; }
+  .phone-info-meta { font-size: 10px; color: #90A0B0; margin-top: 2px; }
+  .phone-cta {
+    width: 100%; padding: 10px; border-radius: 10px; border: none;
+    background: #1565C0; color: white; font-size: 12px; font-weight: 700;
+    margin-bottom: 6px; cursor: default;
+  }
+  .phone-close { width: 100%; padding: 7px; border-radius: 8px; border: 1.5px solid #E0E8F4;
+    background: transparent; color: #90A0B0; font-size: 11px; cursor: default; }
+
+  /* GIF preview */
+  .gif-preview { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+  .gif-thumb { width: 60px; height: 40px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); }
+  .gif-clear { font-size: 11px; color: var(--danger); cursor: pointer; text-decoration: underline; }
+
+  /* Toast de confirmation */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1A2440; color: white; padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; white-space: nowrap; z-index: 9999;
+  }
+  #toast.show { opacity: 1; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #D0D8E8; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🔥 DDay Message Editor</div>
+    <div class="topbar-sub">Gestion des messages de Jour de Tournoi</div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-outline btn-sm" onclick="importJson()">📂 Importer JSON</button>
+    <button class="btn btn-white btn-sm" onclick="exportJson()">💾 Exporter JSON</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="onFileImport(event)" />
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar : liste des messages -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Messages (<span id="msgCount">0</span>)</h2>
+      <button class="btn btn-primary btn-sm" onclick="newMessage()">+ Nouveau</button>
+    </div>
+    <div class="msg-list" id="msgList"></div>
+  </div>
+
+  <!-- Formulaire édition -->
+  <div class="editor" id="editor">
+    <div class="editor-empty">
+      <div class="editor-empty-icon">💬</div>
+      <div>Sélectionne ou crée un message</div>
+    </div>
+  </div>
+
+  <!-- Prévisualisation -->
+  <div class="preview-panel">
+    <div class="preview-header">Aperçu mobile</div>
+    <div class="preview-phone">
+      <div class="phone-frame">
+        <div class="phone-sheet">
+          <div class="phone-handle"></div>
+          <div class="phone-badge-row">
+            <span class="phone-fire" id="pv-emoji">🔥</span>
+            <span class="phone-badge">JOUR DE TOURNOI</span>
+          </div>
+          <div class="phone-media" id="pv-media">🏐</div>
+          <div class="phone-text" id="pv-text">« Défonce-les tous ! »</div>
+          <div class="phone-info">
+            <div class="phone-info-name">Golden Beach 3x3</div>
+            <div class="phone-info-meta">samedi 21 juin · 14h00 · 🏖️ Beach</div>
+          </div>
+          <button class="phone-cta">Voir mon tournoi 🚀</button>
+          <button class="phone-close">Continuer vers l'accueil</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let messages = [];
+let selectedId = null;
+
+const EMOJIS = ['🔥','⚡','💪','🏆','🚀','😤','🎯','👊','🌟','😏'];
+const SURFACES = ['beach','green','gymnase'];
+const GENDERS  = ['mix','masculin','feminin'];
+const FORMATS  = ['2x2','3x3','4x4','6x6'];
+const SURF_LABELS   = { beach:'🏖️ Beach', green:'🌿 Green', gymnase:'🏛️ Gymnase' };
+const GENDER_LABELS = { mix:'Mixte', masculin:'Masculin', feminin:'Féminin' };
+
+// ── Init ──────────────────────────────────────────────────────
+window.onload = () => {
+  const saved = localStorage.getItem('dday_editor_messages');
+  if (saved) {
+    try { messages = JSON.parse(saved); } catch {}
+  } else {
+    // Starter message
+    messages = [{
+      id: 'msg_001',
+      text: 'Défonce-les tous, c\'est votre journée !',
+      emoji: '🔥',
+      gifUrl: '',
+      conditions: { surface: [], gender: [], format: [] },
+      enabled: true,
+    }];
+    persist();
+  }
+  renderList();
+};
+
+// ── Persistence ────────────────────────────────────────────────
+function persist() {
+  localStorage.setItem('dday_editor_messages', JSON.stringify(messages));
+}
+
+function genId() {
+  return 'msg_' + Date.now().toString(36);
+}
+
+// ── List ──────────────────────────────────────────────────────
+function renderList() {
+  document.getElementById('msgCount').textContent = messages.length;
+  const el = document.getElementById('msgList');
+  if (!messages.length) {
+    el.innerHTML = '<div style="padding:16px;color:#90A0B0;font-size:13px;text-align:center">Aucun message</div>';
+    return;
+  }
+  el.innerHTML = messages.map(m => {
+    const hasCond = m.conditions.surface.length + m.conditions.gender.length + m.conditions.format.length > 0;
+    return `
+      <div class="msg-item${m.id === selectedId ? ' selected' : ''}" onclick="selectMessage('${m.id}')">
+        <div class="msg-item-text">${m.emoji || '🔥'} ${escHtml(m.text)}</div>
+        <div class="msg-item-meta">
+          <span class="tag ${m.enabled ? 'tag-enabled' : 'tag-disabled'}">${m.enabled ? 'Actif' : 'Inactif'}</span>
+          ${hasCond ? '<span class="tag tag-cond">Conditions</span>' : '<span class="tag tag-all">Tous tournois</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Select / New / Delete ──────────────────────────────────────
+function selectMessage(id) {
+  selectedId = id;
+  renderList();
+  const m = messages.find(x => x.id === id);
+  if (m) renderForm(m);
+}
+
+function newMessage() {
+  const m = {
+    id: genId(),
+    text: '',
+    emoji: '🔥',
+    gifUrl: '',
+    conditions: { surface: [], gender: [], format: [] },
+    enabled: true,
+  };
+  messages.push(m);
+  persist();
+  selectMessage(m.id);
+  renderList();
+}
+
+function deleteMessage(id) {
+  if (!confirm('Supprimer ce message ?')) return;
+  messages = messages.filter(m => m.id !== id);
+  if (selectedId === id) {
+    selectedId = null;
+    document.getElementById('editor').innerHTML = '<div class="editor-empty"><div class="editor-empty-icon">💬</div><div>Sélectionne ou crée un message</div></div>';
+  }
+  persist();
+  renderList();
+  showToast('Message supprimé');
+}
+
+// ── Form render ────────────────────────────────────────────────
+function renderForm(m) {
+  const condChecked = (type, val) => m.conditions[type].includes(val) ? 'active' : '';
+
+  document.getElementById('editor').innerHTML = `
+    <!-- Texte & emoji -->
+    <div class="form-section">
+      <div class="form-section-title">Message</div>
+
+      <div class="form-row">
+        <label>Phrase motivante *</label>
+        <textarea id="f-text" oninput="updateField('text', this.value)">${escHtml(m.text)}</textarea>
+      </div>
+
+      <div class="form-row">
+        <label>Emoji</label>
+        <div class="emoji-row">
+          ${EMOJIS.map(e => `<button class="emoji-btn${m.emoji===e?' active':''}" onclick="setEmoji('${e}')">${e}</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>URL du GIF (optionnel)</label>
+        <input type="text" id="f-gif" value="${escHtml(m.gifUrl)}" placeholder="https://media.giphy.com/…"
+          oninput="updateField('gifUrl', this.value)" />
+        ${m.gifUrl ? `
+          <div class="gif-preview">
+            <img class="gif-thumb" src="${escHtml(m.gifUrl)}" alt="" onerror="this.style.display='none'" />
+            <span class="gif-clear" onclick="updateField('gifUrl','');document.getElementById('f-gif').value=''">Supprimer</span>
+          </div>` : ''}
+      </div>
+    </div>
+
+    <!-- Conditions -->
+    <div class="form-section">
+      <div class="form-section-title">Conditions d'affichage</div>
+      <div style="font-size:12px;color:#90A0B0;margin-bottom:12px">
+        Laisse tout vide = s'affiche pour tous les tournois.
+      </div>
+
+      <div class="cond-group">
+        <div class="cond-group-title">Surface</div>
+        <div class="cond-pills">
+          ${SURFACES.map(s => `<span class="cond-pill ${condChecked('surface',s)}" onclick="toggleCond('surface','${s}')">${SURF_LABELS[s]}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="cond-group">
+        <div class="cond-group-title">Catégorie</div>
+        <div class="cond-pills">
+          ${GENDERS.map(g => `<span class="cond-pill ${condChecked('gender',g)}" onclick="toggleCond('gender','${g}')">${GENDER_LABELS[g]}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="cond-group">
+        <div class="cond-group-title">Format</div>
+        <div class="cond-pills">
+          ${FORMATS.map(f => `<span class="cond-pill ${condChecked('format',f)}" onclick="toggleCond('format','${f}')">${f}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Activer/Désactiver -->
+    <div class="form-section">
+      <div class="form-section-title">Statut</div>
+      <div class="toggle-row">
+        <label class="toggle">
+          <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="updateField('enabled', this.checked)" />
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">${m.enabled ? 'Actif — ce message peut s\'afficher' : 'Inactif — ce message ne s\'affiche pas'}</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <button class="btn btn-danger btn-sm" onclick="deleteMessage('${m.id}')">🗑 Supprimer</button>
+      <button class="btn btn-success btn-sm" onclick="showToast('Sauvegarde auto ✓')">✓ Sauvegardé</button>
+    </div>
+  `;
+
+  updatePreview();
+}
+
+// ── Mutations ──────────────────────────────────────────────────
+function updateField(field, value) {
+  const m = messages.find(x => x.id === selectedId);
+  if (!m) return;
+  m[field] = value;
+  persist();
+  renderList();
+  updatePreview();
+  if (field === 'enabled') {
+    // Re-render form to update toggle label
+    renderForm(m);
+  }
+}
+
+function setEmoji(emoji) {
+  const m = messages.find(x => x.id === selectedId);
+  if (!m) return;
+  m.emoji = emoji;
+  persist();
+  // Update emoji buttons active state
+  document.querySelectorAll('.emoji-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent === emoji);
+  });
+  renderList();
+  updatePreview();
+}
+
+function toggleCond(type, val) {
+  const m = messages.find(x => x.id === selectedId);
+  if (!m) return;
+  const arr = m.conditions[type];
+  const idx = arr.indexOf(val);
+  if (idx > -1) arr.splice(idx, 1);
+  else arr.push(val);
+  persist();
+  renderForm(m);
+}
+
+// ── Preview ────────────────────────────────────────────────────
+function updatePreview() {
+  const m = messages.find(x => x.id === selectedId);
+  if (!m) return;
+
+  document.getElementById('pv-emoji').textContent = m.emoji || '🔥';
+  document.getElementById('pv-text').textContent  = m.text ? `« ${m.text} »` : '« … »';
+
+  const media = document.getElementById('pv-media');
+  if (m.gifUrl) {
+    media.innerHTML = `<img src="${escHtml(m.gifUrl)}" onerror="this.parentNode.innerHTML='🏐'" />`;
+  } else {
+    media.innerHTML = '🏐';
+  }
+}
+
+// ── Import / Export ────────────────────────────────────────────
+function importJson() {
+  document.getElementById('importFile').click();
+}
+
+function onFileImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.messages) throw new Error('Format invalide');
+      messages = data.messages;
+      persist();
+      selectedId = null;
+      document.getElementById('editor').innerHTML = '<div class="editor-empty"><div class="editor-empty-icon">✅</div><div>JSON importé avec succès</div></div>';
+      renderList();
+      showToast(`${messages.length} message(s) importé(s)`);
+    } catch {
+      alert('Erreur : fichier JSON invalide.\nStructure attendue : { "messages": [...] }');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function exportJson() {
+  const data = JSON.stringify({ messages }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'dday-messages.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Fichier exporté → remplace frontend/src/data/dday-messages.json');
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

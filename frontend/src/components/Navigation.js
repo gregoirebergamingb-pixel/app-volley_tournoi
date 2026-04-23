@@ -2,9 +2,9 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const TABS = [
-  { path: '/dashboard', icon: '🏠', label: 'Accueil'  },
-  { path: '/creer',     icon: '➕', label: 'Créer'    },
   { path: '/recherche', icon: '🔍', label: 'Explorer' },
+  { path: '/dashboard', icon: '🏠', label: 'Accueil'  },
+  { path: '/creer',     icon: '➕', label: 'Ajouter'  },
 ];
 
 function Navigation() {
