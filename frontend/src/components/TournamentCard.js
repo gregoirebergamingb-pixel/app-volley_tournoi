@@ -206,7 +206,7 @@ function TournamentCard({
         {showTeamStatus && !hasFullTeam && !myTeam && !past && (
           <div className="my-team-indicator warn">
             <span style={{ fontSize: 12 }}>⚠️</span>
-            <span className="my-team-indicator-label">Pas encore inscrit dans une équipe</span>
+            <span className="my-team-indicator-label">Tu n'es pas encore inscrit dans une équipe</span>
           </div>
         )}
 

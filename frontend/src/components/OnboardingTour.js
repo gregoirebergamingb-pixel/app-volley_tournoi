@@ -67,9 +67,20 @@ function OnboardingTour({ onDone }) {
       {isAvatar && <div className="ob-spot-avatar" />}
       {s.spotType === 'tab' && <div className={`ob-spot ob-spot-${s.tabIndex}`} />}
 
-      {/* Flèche indicatrice pour l'étape avatar */}
+      {/* Menu ouvert simulé pour l'étape avatar */}
       {isAvatar && (
-        <div className="ob-avatar-arrow">ton menu →</div>
+        <div className="avatar-menu ob-fake-menu">
+          <div className="avatar-menu-item" style={{ fontWeight:700, cursor:'default', color:'#90A0B0', fontSize:12 }}>
+            Mon compte
+          </div>
+          <div className="avatar-menu-item">⚙️ Mon profil</div>
+          <div className="avatar-menu-sep" />
+          <div className="avatar-menu-item" style={{ fontWeight:800, color:'var(--primary)' }}>
+            👥 Mes groupes
+          </div>
+          <div className="avatar-menu-sep" />
+          <div className="avatar-menu-item danger">🚪 Déconnexion</div>
+        </div>
       )}
 
       {/* Bulle d'info */}

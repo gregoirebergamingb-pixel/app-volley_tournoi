@@ -41,6 +41,7 @@ function CreateTournamentWizard({ user }) {
   const [gender, setGender]         = useState('');
   const [surface, setSurface]       = useState('');
   const [price, setPrice]           = useState('');
+  const [externalUrl, setExternalUrl] = useState('');
 
   const [suggestions, setSuggestions]       = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -119,7 +120,8 @@ function CreateTournamentWizard({ user }) {
         `${API_URL}/api/tournaments`,
         { groupId, name: name.trim(), date, time, location: location.trim(),
           lat: locationLat, lng: locationLng,
-          price: parseFloat(price) || 0, playerFormat, gender, surface: surface || null },
+          price: parseFloat(price) || 0, playerFormat, gender, surface: surface || null,
+          externalUrl: externalUrl.trim() || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       navigate('/dashboard');
@@ -258,6 +260,15 @@ function CreateTournamentWizard({ user }) {
               <input type="number" value={price} onChange={e => setPrice(e.target.value)}
                 placeholder="0 = gratuit" min="0" step="0.5" />
             </div>
+          </div>
+
+          <div className="form-group" style={{ marginTop: 8 }}>
+            <label>Lien d'inscription externe <span style={{ color:'#B0C0D0', fontWeight:400 }}>(facultatif)</span></label>
+            <p style={{ fontSize:12, color:'#90A0B0', margin:'-4px 0 8px' }}>
+              Ajoute un lien pour que d'autres membres puissent s'inscrire facilement au tournoi.
+            </p>
+            <input type="url" value={externalUrl} onChange={e => setExternalUrl(e.target.value)}
+              placeholder="https://…" />
           </div>
 
           <p style={{ fontSize: 12, color: '#B0C0D0', marginBottom: 16 }}>

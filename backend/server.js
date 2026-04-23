@@ -649,7 +649,7 @@ app.get('/api/tournaments/search', verifyToken, async (req, res) => {
 // Créer un tournoi
 app.post('/api/tournaments', verifyToken, async (req, res) => {
   try {
-    const { groupId, name, date, time, location, price, playerFormat, gender, surface, lat, lng } = req.body;
+    const { groupId, name, date, time, location, price, playerFormat, gender, surface, lat, lng, externalUrl } = req.body;
 
     if (!groupId || !name || !date || !location) {
       return res.status(400).json({ error: 'Informations incomplètes (groupId, name, date, location requis)' });
@@ -681,6 +681,7 @@ app.post('/api/tournaments', verifyToken, async (req, res) => {
       lng: lng ? parseFloat(lng) : null,
       price: price || 0, playerFormat, gender, teamSize,
       surface: validSurfaces.includes(surface) ? surface : null,
+      externalUrl: externalUrl || null,
       creator: req.userId, createdAt: new Date()
     });
 

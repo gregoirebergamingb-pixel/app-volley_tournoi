@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import AvatarMenu from '../components/AvatarMenu';
 import TournamentCard from '../components/TournamentCard';
 import DDayPopup from '../components/DDayPopup';
@@ -170,7 +171,7 @@ function Dashboard({ user, onLogout }) {
     }
   }, [entries]);
 
-  const fetchTournaments = async () => {
+  const fetchTournaments = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/api/users/me/tournaments`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -183,7 +184,9 @@ function Dashboard({ user, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  const { containerRef: pageRef, onTouchStart: ptrStart, onTouchEnd: ptrEnd, refreshing: ptrRefreshing } = usePullToRefresh(fetchTournaments);
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split('T')[0];
@@ -216,7 +219,10 @@ function Dashboard({ user, onLogout }) {
         </div>
       </div>
 
-      <div className="page-content">
+      <div className="page-content" ref={pageRef} onTouchStart={ptrStart} onTouchEnd={ptrEnd}>
+        {ptrRefreshing && (
+          <div className="ptr-indicator"><div className="ptr-spinner" /><span>Actualisation…</span></div>
+        )}
         {loading && <><SkeletonCard /><SkeletonCard /><SkeletonCard /></>}
         {error   && <div className="message error">{error}</div>}
 

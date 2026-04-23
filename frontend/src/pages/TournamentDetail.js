@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
@@ -161,6 +162,8 @@ function TournamentDetail({ user }) {
   }, [tournamentId, token]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const { containerRef: pageRef, onTouchStart: ptrStart, onTouchEnd: ptrEnd, refreshing: ptrRefreshing } = usePullToRefresh(fetchData);
 
   // Sync edit modal with latest team data after fetchData
   useEffect(() => {
@@ -519,6 +522,13 @@ function TournamentDetail({ user }) {
               ? <span className="badge badge-yellow">{tournament.price}€</span>
               : <span className="badge badge-green">Gratuit</span>}
           </div>
+          {tournament.externalUrl && (
+            <a href={tournament.externalUrl} target="_blank" rel="noreferrer"
+              className="button-secondary btn-sm"
+              style={{ display:'inline-flex', alignItems:'center', gap:6, marginBottom:8, textDecoration:'none' }}>
+              🔗 S'inscrire sur le site du tournoi
+            </a>
+          )}
         </div>
       )}
 
@@ -557,7 +567,10 @@ function TournamentDetail({ user }) {
         </div>
       )}
 
-      <div className="page-content">
+      <div className="page-content" ref={pageRef} onTouchStart={ptrStart} onTouchEnd={ptrEnd}>
+        {ptrRefreshing && (
+          <div className="ptr-indicator"><div className="ptr-spinner" /><span>Actualisation…</span></div>
+        )}
         {error && <div className="message error">{error}</div>}
         {!user.gender && (
           <div className="message info">
@@ -992,16 +1005,11 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onLeave, onDelete,
       <div className="team-actions" style={{ justifyContent:'flex-end' }}>
         {isMyTeam ? (
           <>
-            {isCreator && (
-              <>
-                <button className="button-secondary btn-sm" onClick={() => onEdit(team)}>Modifier</button>
-                <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(team)}>Supprimer</button>
-              </>
-            )}
-            {!isCreator && (
-              <button className="button-danger btn-sm" disabled={actionLoading}
-                onClick={() => onLeave(team.id)}>Quitter</button>
-            )}
+            <button className="button-secondary btn-sm" onClick={() => onEdit(team)}>Modifier</button>
+            {isCreator
+              ? <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(team)}>Supprimer</button>
+              : <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onLeave(team.id)}>Quitter</button>
+            }
           </>
         ) : canJoin ? (
           showJoinForm ? (
