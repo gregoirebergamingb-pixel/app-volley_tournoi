@@ -270,6 +270,17 @@ function TournamentDetail({ user }) {
     } finally { setActionLoading(false); }
   };
 
+  const handleAddExternal = async (teamId, name) => {
+    setActionLoading(true);
+    try {
+      await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${teamId}/add-external`,
+        { name }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur');
+    } finally { setActionLoading(false); }
+  };
+
   const handleRemoveExternal = async (teamId, extId) => {
     setActionLoading(true);
     try {
@@ -731,6 +742,7 @@ function TournamentDetail({ user }) {
           onSave={handleSaveEditTeam}
           onClose={() => setEditingTeam(null)}
           onAddMember={(userId) => handleAddMember(editingTeam.id, userId)}
+          onAddExternal={(name) => handleAddExternal(editingTeam.id, name)}
           onKickMember={(userId) => handleKickMember(editingTeam.id, userId)}
           onRemoveExternal={(extId) => handleRemoveExternal(editingTeam.id, extId)}
           actionLoading={actionLoading}
@@ -800,9 +812,10 @@ function PlayerSearch({ token, onSelect, excludeIds = [], placeholder }) {
 }
 
 function EditTeamModal({ team, name, setName, visibility, setVisibility, onSave, onClose,
-  onAddMember, onKickMember, onRemoveExternal, actionLoading, user, token }) {
+  onAddMember, onAddExternal, onKickMember, onRemoveExternal, actionLoading, user, token }) {
 
   const [replacingExtId, setReplacingExtId] = useState(null);
+  const [extName, setExtName]               = useState('');
   const externals   = team.externalMembers || [];
   const totalOccupied = team.members.length + externals.length;
   const spotsLeft   = team.maxSize - totalOccupied;
@@ -898,6 +911,21 @@ function EditTeamModal({ team, name, setName, visibility, setVisibility, onSave,
                 onSelect={(u) => onAddMember(u.id)}
                 placeholder="Rechercher par prénom ou nom…"
               />
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:10 }}>
+                <div className="av-circle av-sm" style={{ background:'#E8EEF8', border:'1.5px dashed #AAB8CC', fontSize:14, flexShrink:0 }}>👤</div>
+                <input
+                  value={extName}
+                  onChange={e => setExtName(e.target.value)}
+                  placeholder="Joueur sans compte (prénom nom)"
+                  style={{ flex:1, fontSize:13, padding:'6px 10px' }}
+                  onKeyDown={e => { if (e.key === 'Enter' && extName.trim()) { onAddExternal(extName.trim()); setExtName(''); } }}
+                />
+                <button type="button" className="button-secondary btn-sm"
+                  disabled={!extName.trim() || actionLoading}
+                  onClick={() => { onAddExternal(extName.trim()); setExtName(''); }}>
+                  Ajouter
+                </button>
+              </div>
             </div>
           )}
         </div>

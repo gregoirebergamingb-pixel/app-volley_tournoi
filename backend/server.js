@@ -646,6 +646,45 @@ app.get('/api/tournaments/search', verifyToken, async (req, res) => {
   }
 });
 
+// Chercher des tournois similaires (détection de doublons)
+app.get('/api/tournaments/similar', verifyToken, async (req, res) => {
+  try {
+    const { date, location } = req.query;
+    if (!date || !location) return res.json([]);
+
+    function locWords(str) {
+      const stops = new Set(['rue','avenue','boulevard','chemin','place','allee','route','voie','les','des','sur','sous']);
+      return (str || '').toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9\s]/g, '').split(/\s+/)
+        .filter(w => w.length >= 3 && !stops.has(w));
+    }
+    function locationMatch(a, b) {
+      const setA = new Set(locWords(a));
+      return locWords(b).some(w => setA.has(w));
+    }
+
+    const groupsSnap = await db.collection('groups').where('members', 'array-contains', req.userId).get();
+    const seen = new Set();
+    const results = [];
+    for (const gDoc of groupsSnap.docs) {
+      const tSnap = await db.collection('tournaments').where('groupId', '==', gDoc.id).get();
+      for (const tDoc of tSnap.docs) {
+        if (seen.has(tDoc.id)) continue;
+        seen.add(tDoc.id);
+        const t = tDoc.data();
+        if (t.date === date && locationMatch(t.location, location)) {
+          results.push({ id: t.id, name: t.name, date: t.date, location: t.location, playerFormat: t.playerFormat, gender: t.gender });
+        }
+      }
+    }
+    res.json(results);
+  } catch (e) {
+    console.error('similar:', e);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Créer un tournoi
 app.post('/api/tournaments', verifyToken, async (req, res) => {
   try {
@@ -1032,7 +1071,7 @@ app.put('/api/tournaments/:tournamentId/teams/:teamId', verifyToken, async (req,
     const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
     const team = await teamRef.get();
     if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
-    if (team.data().creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut modifier l\'équipe' });
+    if (!team.data().members.includes(req.userId)) return res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
     const update = { name: name.trim() };
     if (visibility && ['open', 'group_only'].includes(visibility)) update.visibility = visibility;
     await teamRef.update(update);
@@ -1058,7 +1097,7 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/add-member', verifyToken,
     const teamData = teamDoc.data();
     const tournamentData = tournDoc.data();
 
-    if (teamData.creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut ajouter des membres' });
+    if (!teamData.members.includes(req.userId)) return res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
     if (teamData.members.includes(targetId)) return res.status(400).json({ error: 'Ce joueur est déjà dans l\'équipe' });
 
     const totalOccupied = teamData.members.length + (teamData.externalMembers || []).length;
@@ -1085,15 +1124,44 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/add-member', verifyToken,
   }
 });
 
-// Retirer un membre (créateur seulement, sauf soi-même)
+// Ajouter un membre externe (tout membre de l'équipe)
+app.post('/api/tournaments/:tournamentId/teams/:teamId/add-external', verifyToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Nom requis' });
+
+    const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
+    const teamDoc = await teamRef.get();
+    if (!teamDoc.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+    const teamData = teamDoc.data();
+
+    if (!teamData.members.includes(req.userId)) return res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+
+    const totalOccupied = teamData.members.length + (teamData.externalMembers || []).length;
+    if (totalOccupied >= teamData.maxSize) return res.status(400).json({ error: 'Équipe complète' });
+
+    const newExt = {
+      id: `ext_${req.params.teamId}_${Date.now()}`,
+      name: name.trim(),
+      reservedBy: req.userId
+    };
+    await teamRef.update({ externalMembers: [...(teamData.externalMembers || []), newExt] });
+    res.json({ message: 'Membre externe ajouté' });
+  } catch (error) {
+    console.error('Erreur add-external:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Retirer un membre (tout membre de l'équipe, sauf retirer le créateur)
 app.delete('/api/tournaments/:tournamentId/teams/:teamId/members/:userId', verifyToken, async (req, res) => {
   try {
     const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
     const team = await teamRef.get();
     if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
     const teamData = team.data();
-    if (teamData.creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut retirer des membres' });
-    if (req.params.userId === req.userId) return res.status(400).json({ error: 'Le créateur ne peut pas se retirer' });
+    if (!teamData.members.includes(req.userId)) return res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+    if (req.params.userId === teamData.creator && req.userId !== teamData.creator) return res.status(403).json({ error: 'Impossible de retirer le créateur' });
 
     const updatedMembers = teamData.members.filter(id => id !== req.params.userId);
     const updatedDetails = (teamData.memberDetails || []).filter(m => m.id !== req.params.userId);
@@ -1142,6 +1210,145 @@ app.delete('/api/tournaments/:tournamentId/teams/:teamId', verifyToken, async (r
     if (team.data().creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut supprimer l\'équipe' });
     await teamRef.delete();
     res.json({ message: 'Équipe supprimée' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Profil public d'un utilisateur avec statistiques complètes
+app.get('/api/users/:userId/profile', verifyToken, async (req, res) => {
+  try {
+    const targetId = req.params.userId;
+    const userDoc = await db.collection('users').doc(targetId).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    const u = userDoc.data();
+
+    const allTournamentsSnap = await db.collection('tournaments').get();
+    const stats = { tournaments: 0, wins: 0, losses: 0, titles: 0, podiums: 0 };
+    const formatStats = {};
+    const surfaceStats = {};
+    const partnerMap = {};
+    const history = [];
+
+    for (const tDoc of allTournamentsSnap.docs) {
+      const tData = tDoc.data();
+      const teamsSnap = await db.collection('tournaments').doc(tDoc.id).collection('teams')
+        .where('members', 'array-contains', targetId).get();
+      if (teamsSnap.empty) continue;
+
+      const team = teamsSnap.docs[0].data();
+      stats.tournaments++;
+      const tw = team.results?.wins || 0;
+      const tl = team.results?.losses || 0;
+      const placement = team.results?.placement || null;
+      stats.wins += tw;
+      stats.losses += tl;
+      if (placement === '1') stats.titles++;
+      const pNum = parseInt((placement || '').split('-')[0]);
+      if (!isNaN(pNum) && pNum <= 3) stats.podiums++;
+
+      if (tData.playerFormat) {
+        if (!formatStats[tData.playerFormat]) formatStats[tData.playerFormat] = { wins: 0, losses: 0, tournaments: 0 };
+        formatStats[tData.playerFormat].wins += tw;
+        formatStats[tData.playerFormat].losses += tl;
+        formatStats[tData.playerFormat].tournaments++;
+      }
+      if (tData.surface) {
+        if (!surfaceStats[tData.surface]) surfaceStats[tData.surface] = { wins: 0, losses: 0, tournaments: 0 };
+        surfaceStats[tData.surface].wins += tw;
+        surfaceStats[tData.surface].losses += tl;
+        surfaceStats[tData.surface].tournaments++;
+      }
+      for (const mid of (team.members || [])) {
+        if (mid === targetId) continue;
+        if (!partnerMap[mid]) partnerMap[mid] = { wins: 0, losses: 0, tournaments: 0 };
+        partnerMap[mid].wins += tw;
+        partnerMap[mid].losses += tl;
+        partnerMap[mid].tournaments++;
+      }
+      history.push({
+        id: tDoc.id, name: tData.name, date: tData.date,
+        playerFormat: tData.playerFormat || null, surface: tData.surface || null,
+        placement, wins: tw, losses: tl,
+      });
+    }
+
+    const topPartnerIds = Object.entries(partnerMap)
+      .sort((a, b) => b[1].tournaments - a[1].tournaments).slice(0, 5).map(([id]) => id);
+    const partners = [];
+    if (topPartnerIds.length > 0) {
+      const pDocs = await Promise.all(topPartnerIds.map(id => db.collection('users').doc(id).get()));
+      pDocs.forEach((pDoc, i) => {
+        if (pDoc.exists) {
+          const pd = pDoc.data();
+          partners.push({ id: pd.id, firstName: pd.firstName, lastName: pd.lastName, avatarUrl: pd.avatarUrl || null, ...partnerMap[topPartnerIds[i]] });
+        }
+      });
+    }
+
+    history.sort((a, b) => b.date.localeCompare(a.date));
+    res.json({
+      id: u.id, firstName: u.firstName, lastName: u.lastName,
+      avatarUrl: u.avatarUrl || null, level: u.level, gender: u.gender,
+      stats, formatStats, surfaceStats,
+      history: history.slice(0, 10), partners,
+    });
+  } catch (error) {
+    console.error('Error profile:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Stats des membres d'un groupe (tournois joués, victoires, défaites)
+app.get('/api/groups/:groupId/member-stats', verifyToken, async (req, res) => {
+  try {
+    const groupDoc = await db.collection('groups').doc(req.params.groupId).get();
+    if (!groupDoc.exists) return res.status(404).json({ error: 'Groupe non trouvé' });
+    const groupData = groupDoc.data();
+    if (!groupData.members.includes(req.userId)) return res.status(403).json({ error: 'Accès non autorisé' });
+
+    const tournamentsSnap = await db.collection('tournaments').where('groupId', '==', req.params.groupId).get();
+    const stats = {};
+    for (const memberId of (groupData.members || [])) {
+      stats[memberId] = { id: memberId, tournaments: 0, wins: 0, losses: 0 };
+    }
+    for (const tDoc of tournamentsSnap.docs) {
+      const teamsSnap = await db.collection('tournaments').doc(tDoc.id).collection('teams').get();
+      for (const teamDoc of teamsSnap.docs) {
+        const team = teamDoc.data();
+        for (const memberId of (team.members || [])) {
+          if (stats[memberId]) {
+            stats[memberId].tournaments++;
+            if (team.results) {
+              stats[memberId].wins += team.results.wins || 0;
+              stats[memberId].losses += team.results.losses || 0;
+            }
+          }
+        }
+      }
+    }
+    res.json(Object.values(stats));
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Saisir les résultats d'une équipe (tout membre de l'équipe)
+app.put('/api/tournaments/:tournamentId/teams/:teamId/results', verifyToken, async (req, res) => {
+  try {
+    const { placement, wins, losses } = req.body;
+    const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
+    const team = await teamRef.get();
+    if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+    if (!team.data().members.includes(req.userId)) return res.status(403).json({ error: 'Vous n\'êtes pas membre de cette équipe' });
+    await teamRef.update({
+      results: {
+        placement: placement || null,
+        wins: parseInt(wins) || 0,
+        losses: parseInt(losses) || 0,
+      }
+    });
+    res.json({ message: 'Résultats enregistrés' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import CropModal from '../components/CropModal';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -11,23 +12,6 @@ const LEVEL_LABELS = {
   national:      { label: 'National',      color: '#E65100', bg: '#FFF3E0' },
   pro:           { label: 'Pro',           color: '#C62828', bg: '#FFEBEE' },
 };
-
-function resizeImage(file, size) {
-  return new Promise(resolve => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement('canvas');
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      const s = Math.min(img.width, img.height);
-      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
-      resolve(canvas.toDataURL('image/jpeg', 0.75));
-    };
-    img.src = url;
-  });
-}
 
 function Profile({ user, onLogout, onUserUpdate }) {
   const token = localStorage.getItem('token');
@@ -40,6 +24,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
   const [level, setLevel]           = useState(user?.level     || '');
   const [avatar, setAvatar]         = useState(user?.avatarUrl || null);
   const [avatarChanged, setAvatarChanged] = useState(false);
+  const [cropSrc, setCropSrc]       = useState(null);
 
   const [showPassword, setShowPassword]   = useState(false);
   const [currentPwd, setCurrentPwd]       = useState('');
@@ -50,14 +35,12 @@ function Profile({ user, onLogout, onUserUpdate }) {
   const [success, setSuccess] = useState('');
   const [error, setError]     = useState('');
 
-  const handleAvatarChange = async (e) => {
+  const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    try {
-      const compressed = await resizeImage(file, 120);
-      setAvatar(compressed);
-      setAvatarChanged(true);
-    } catch { /* ignore */ }
+    const url = URL.createObjectURL(file);
+    setCropSrc(url);
+    e.target.value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -75,7 +58,13 @@ function Profile({ user, onLogout, onUserUpdate }) {
 
     setSaving(true);
     try {
-      const body = { firstName: firstName.trim(), lastName: lastName.trim(), phone, email, gender, level };
+      const fn = firstName.trim();
+      const ln = lastName.trim();
+      const body = {
+        firstName: fn.charAt(0).toUpperCase() + fn.slice(1).toLowerCase(),
+        lastName: ln.toUpperCase(),
+        phone, email, gender, level
+      };
       if (avatarChanged)        body.avatarUrl = avatar;
       if (showPassword && newPwd) { body.currentPassword = currentPwd; body.newPassword = newPwd; }
 
@@ -105,6 +94,13 @@ function Profile({ user, onLogout, onUserUpdate }) {
 
   return (
     <>
+      {cropSrc && (
+        <CropModal
+          src={cropSrc}
+          onConfirm={(b64) => { setAvatar(b64); setAvatarChanged(true); URL.revokeObjectURL(cropSrc); setCropSrc(null); }}
+          onCancel={() => { URL.revokeObjectURL(cropSrc); setCropSrc(null); }}
+        />
+      )}
       {/* Header */}
       <div className="app-header">
         <div className="header-inner">

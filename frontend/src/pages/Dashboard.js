@@ -6,6 +6,7 @@ import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import AvatarMenu from '../components/AvatarMenu';
 import TournamentCard from '../components/TournamentCard';
 import DDayPopup from '../components/DDayPopup';
+import ResultsModal from '../components/ResultsModal';
 import { daysUntilNum, shortLocation, avatarColor, initials, groupColor } from '../components/TournamentCard';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -154,6 +155,7 @@ function Dashboard({ user, onLogout }) {
   });
   const [error, setError]         = useState('');
   const [ddayTournament, setDdayTournament] = useState(null);
+  const [resultsEntry, setResultsEntry]     = useState(null);
   const token = localStorage.getItem('token');
 
   useEffect(() => { fetchTournaments(); }, []); // eslint-disable-line
@@ -170,6 +172,19 @@ function Dashboard({ user, onLogout }) {
       localStorage.setItem(key, '1');
     }
   }, [entries]);
+
+  // Déclenche le popup de saisie des résultats pour les tournois passés sans résultats
+  useEffect(() => {
+    if (!entries.length || loading) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    try {
+      const skipped = JSON.parse(sessionStorage.getItem('skipped_results') || '[]');
+      const pending = entries
+        .filter(e => e.tournament.date < todayStr && e.myTeam && !e.myTeam.results && !skipped.includes(e.tournament.id))
+        .sort((a, b) => b.tournament.date.localeCompare(a.tournament.date));
+      if (pending.length > 0) setResultsEntry(pending[0]);
+    } catch {}
+  }, [entries, loading]);
 
   const fetchTournaments = useCallback(async () => {
     try {
@@ -273,6 +288,18 @@ function Dashboard({ user, onLogout }) {
         <DDayPopup
           tournament={ddayTournament}
           onClose={() => setDdayTournament(null)}
+        />
+      )}
+
+      {resultsEntry && !ddayTournament && (
+        <ResultsModal
+          tournament={resultsEntry.tournament}
+          team={resultsEntry.myTeam}
+          token={token}
+          onClose={(saved) => {
+            setResultsEntry(null);
+            if (saved) fetchTournaments();
+          }}
         />
       )}
     </>

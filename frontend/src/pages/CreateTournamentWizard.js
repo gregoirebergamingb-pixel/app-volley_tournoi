@@ -42,6 +42,8 @@ function CreateTournamentWizard({ user }) {
   const [surface, setSurface]       = useState('');
   const [price, setPrice]           = useState('');
   const [externalUrl, setExternalUrl] = useState('');
+  const [similarTournament, setSimilarTournament] = useState(null);
+  const [pendingSubmit, setPendingSubmit]         = useState(false);
 
   const [suggestions, setSuggestions]       = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -105,15 +107,7 @@ function CreateTournamentWizard({ user }) {
     return errs;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setFieldErrors(errs);
-      setError('Veuillez remplir tous les champs obligatoires.');
-      return;
-    }
+  const doCreate = async () => {
     setLoading(true);
     try {
       await axios.post(
@@ -130,6 +124,30 @@ function CreateTournamentWizard({ user }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setError('Veuillez remplir tous les champs obligatoires.');
+      return;
+    }
+    // Check for duplicate tournaments
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/tournaments/similar?date=${encodeURIComponent(date)}&location=${encodeURIComponent(location.trim())}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.length > 0) {
+        setSimilarTournament(res.data[0]);
+        setPendingSubmit(true);
+        return;
+      }
+    } catch { /* ignore, proceed to create */ }
+    await doCreate();
   };
 
   const fe = (key) => fieldErrors[key] ? 'form-group field-error' : 'form-group';
@@ -280,6 +298,45 @@ function CreateTournamentWizard({ user }) {
           </button>
         </form>
       </div>
+
+      {/* Popup doublon */}
+      {similarTournament && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(10,18,40,0.6)', zIndex:400,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:'0 20px' }}
+          onClick={() => { setSimilarTournament(null); setPendingSubmit(false); }}>
+          <div style={{ background:'white', borderRadius:20, padding:'24px 20px', width:'100%',
+            maxWidth:390, boxShadow:'0 12px 40px rgba(0,0,0,0.25)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:28, textAlign:'center', marginBottom:8 }}>🔍</div>
+            <div style={{ fontSize:17, fontWeight:800, color:'var(--text)', textAlign:'center', marginBottom:6 }}>
+              Ce tournoi existe peut-être déjà
+            </div>
+            <p style={{ fontSize:13, color:'#607080', textAlign:'center', marginBottom:16 }}>
+              Nous avons trouvé un tournoi similaire dans l'application :
+            </p>
+            <div style={{ background:'#F5F8FF', borderRadius:12, padding:'14px 16px', marginBottom:20,
+              border:'1.5px solid #E0E8F4' }}>
+              <div style={{ fontWeight:800, fontSize:15, color:'var(--text)', marginBottom:4 }}>
+                {similarTournament.name}
+              </div>
+              <div style={{ fontSize:13, color:'#607080' }}>
+                📅 {new Date(similarTournament.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}
+              </div>
+              <div style={{ fontSize:13, color:'#607080' }}>📍 {similarTournament.location}</div>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <button style={{ width:'100%', padding:'13px' }}
+                onClick={() => navigate(`/tournament/${similarTournament.id}`)}>
+                ✅ Oui, c'est ce tournoi
+              </button>
+              <button className="button-secondary" style={{ width:'100%', padding:'13px' }}
+                onClick={() => { setSimilarTournament(null); setPendingSubmit(false); doCreate(); }}>
+                ➕ Non, créer un autre tournoi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

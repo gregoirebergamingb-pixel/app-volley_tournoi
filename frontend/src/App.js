@@ -13,6 +13,7 @@ import TournamentDetail from './pages/TournamentDetail';
 import TournamentSearch from './pages/TournamentSearch';
 import JoinGroup from './pages/JoinGroup';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import Navigation from './components/Navigation';
 import OnboardingTour from './components/OnboardingTour';
 
@@ -86,6 +87,7 @@ function App() {
               <Route path="/creer"              element={<CreateTournamentWizard user={user} />} />
               <Route path="/recherche"          element={<TournamentSearch user={user} onLogout={handleLogout} />} />
               <Route path="/profile"            element={<Profile          user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />} />
+              <Route path="/profil/:userId"    element={<PublicProfile    user={user} />} />
               <Route path="/rejoindre/:code"    element={<JoinGroup        user={user} />} />
               <Route path="/"                   element={<Navigate to="/dashboard" />} />
               <Route path="*"                   element={<Navigate to="/dashboard" />} />

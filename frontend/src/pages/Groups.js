@@ -33,6 +33,9 @@ function Groups({ user, onLogout }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage]           = useState('');
   const [expandedId, setExpandedId]     = useState(null);
+  const [memberStats, setMemberStats]   = useState({});
+  const [memberTab, setMemberTab]       = useState('tournaments');
+  const [statsLoading, setStatsLoading] = useState(false);
   const inviteLinkRef = useRef(null);
   const token = localStorage.getItem('token');
 
@@ -138,7 +141,45 @@ function Groups({ user, onLogout }) {
     }
   };
 
-  const toggleExpand = (groupId) => setExpandedId(prev => prev === groupId ? null : groupId);
+  const toggleExpand = async (groupId) => {
+    const isOpening = expandedId !== groupId;
+    setExpandedId(isOpening ? groupId : null);
+    if (isOpening && !memberStats[groupId]) {
+      setStatsLoading(true);
+      try {
+        const res = await axios.get(`${API_URL}/api/groups/${groupId}/member-stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMemberStats(prev => ({ ...prev, [groupId]: res.data }));
+      } catch { /* ignore */ } finally {
+        setStatsLoading(false);
+      }
+    }
+  };
+
+  const getSortedMembers = (group) => {
+    const stats = memberStats[group.id] || [];
+    const merged = (group.memberDetails || []).map(m => {
+      const s = stats.find(s => s.id === m.id) || { tournaments: 0, wins: 0, losses: 0 };
+      return { ...m, ...s };
+    });
+    if (memberTab === 'wins') return [...merged].sort((a,b) => b.wins - a.wins);
+    if (memberTab === 'pct') return [...merged].sort((a,b) => {
+      const pA = (a.wins + a.losses) > 0 ? a.wins / (a.wins + a.losses) : -1;
+      const pB = (b.wins + b.losses) > 0 ? b.wins / (b.wins + b.losses) : -1;
+      return pB - pA;
+    });
+    return [...merged].sort((a,b) => b.tournaments - a.tournaments);
+  };
+
+  const getStatDisplay = (m) => {
+    if (memberTab === 'wins') return m.wins > 0 ? `${m.wins}` : '—';
+    if (memberTab === 'pct') {
+      const total = m.wins + m.losses;
+      return total > 0 ? `${Math.round(m.wins / total * 100)}%` : '—';
+    }
+    return `${m.tournaments}`;
+  };
 
   return (
     <>
@@ -286,21 +327,38 @@ function Groups({ user, onLogout }) {
                   {/* Expanded member list — below buttons */}
                   {expandedId === group.id && (
                     <div className="group-members-expanded" onClick={e => e.stopPropagation()}>
-                      {(group.memberDetails || []).map(m => (
-                        <div key={m.id} className="group-member-row">
-                          <div className={`av-circle av-md ${!m.avatarUrl ? avatarColor(m.id) : ''}`}
-                            style={{ flexShrink:0, border: m.id === user.id ? '2.5px solid var(--primary)' : undefined }}>
-                            {m.avatarUrl
-                              ? <img src={m.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
-                              : initials(m.firstName, m.lastName)
-                            }
+                      {/* Tab bar */}
+                      <div className="member-rank-tabs">
+                        {[['tournaments','Tournois'],['wins','Victoires'],['pct','% Victoires']].map(([key, label]) => (
+                          <button key={key}
+                            className={`member-rank-tab ${memberTab === key ? 'active' : ''}`}
+                            onClick={() => setMemberTab(key)}>{label}</button>
+                        ))}
+                      </div>
+
+                      {statsLoading ? (
+                        <div style={{ textAlign:'center', padding:'14px', color:'#90A0B0', fontSize:13 }}>Chargement…</div>
+                      ) : getSortedMembers(group).map((m, idx) => {
+                        const rank = idx + 1;
+                        const rankClass = rank === 1 ? 'rank-gold' : rank === 2 ? 'rank-silver' : rank === 3 ? 'rank-bronze' : 'rank-other';
+                        return (
+                          <div key={m.id} className="group-member-row">
+                            <span className={`rank-badge ${rankClass}`}>{rank}</span>
+                            <div className={`av-circle av-md ${!m.avatarUrl ? avatarColor(m.id) : ''}`}
+                              style={{ flexShrink:0, border: m.id === user.id ? '2.5px solid var(--primary)' : undefined }}>
+                              {m.avatarUrl
+                                ? <img src={m.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                                : initials(m.firstName, m.lastName)
+                              }
+                            </div>
+                            <span className="group-member-name">
+                              {m.firstName} {m.lastName}
+                              {m.id === user.id && <span style={{ fontSize:10, color:'var(--primary)', fontWeight:700, marginLeft:5 }}>Moi</span>}
+                            </span>
+                            <span className="member-rank-stat">{getStatDisplay(m)}</span>
                           </div>
-                          <span className="group-member-name">
-                            {m.firstName} {m.lastName}
-                            {m.id === user.id && <span style={{ fontSize:10, color:'var(--primary)', fontWeight:700, marginLeft:5 }}>Moi</span>}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </>

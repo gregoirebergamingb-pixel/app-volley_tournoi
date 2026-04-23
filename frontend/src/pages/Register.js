@@ -1,27 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import CropModal from '../components/CropModal';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-function resizeImage(file, size) {
-  return new Promise(resolve => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const canvas = document.createElement('canvas');
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      const s = Math.min(img.width, img.height);
-      const ox = (img.width - s) / 2;
-      const oy = (img.height - s) / 2;
-      ctx.drawImage(img, ox, oy, s, s, 0, 0, size, size);
-      resolve(canvas.toDataURL('image/jpeg', 0.75));
-    };
-    img.src = url;
-  });
-}
 
 function Register({ onLogin }) {
   const [email, setEmail]                     = useState('');
@@ -33,6 +15,7 @@ function Register({ onLogin }) {
   const [level, setLevel]                     = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [avatarBase64, setAvatarBase64]       = useState(null);
+  const [cropSrc, setCropSrc]                 = useState(null);
   const [error, setError]                     = useState('');
   const [loading, setLoading]                 = useState(false);
 
@@ -40,13 +23,12 @@ function Register({ onLogin }) {
   const [searchParams] = useSearchParams();
   const inviteCode = searchParams.get('code');
 
-  const handleAvatarChange = async (e) => {
+  const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    try {
-      const compressed = await resizeImage(file, 120);
-      setAvatarBase64(compressed);
-    } catch { /* ignore */ }
+    const url = URL.createObjectURL(file);
+    setCropSrc(url);
+    e.target.value = '';
   };
 
   const handleRegister = async (e) => {
@@ -58,9 +40,13 @@ function Register({ onLogin }) {
     if (!level)  { setError('Veuillez sélectionner votre niveau de jeu'); return; }
     setLoading(true);
     try {
+      const fn = firstName.trim();
+      const ln = lastName.trim();
+      const normalFirst = fn.charAt(0).toUpperCase() + fn.slice(1).toLowerCase();
+      const normalLast  = ln.toUpperCase();
       const res = await axios.post(`${API_URL}/api/auth/register`, {
         email, password,
-        firstName: firstName.trim(), lastName: lastName.trim(),
+        firstName: normalFirst, lastName: normalLast,
         gender, level, phone, avatarUrl: avatarBase64 || null
       });
       onLogin(res.data.token, res.data.user);
@@ -77,6 +63,14 @@ function Register({ onLogin }) {
   };
 
   return (
+    <>
+    {cropSrc && (
+      <CropModal
+        src={cropSrc}
+        onConfirm={(b64) => { setAvatarBase64(b64); URL.revokeObjectURL(cropSrc); setCropSrc(null); }}
+        onCancel={() => { URL.revokeObjectURL(cropSrc); setCropSrc(null); }}
+      />
+    )}
     <div className="auth-form">
       <h2>Inscription</h2>
 
@@ -183,6 +177,7 @@ function Register({ onLogin }) {
         <p>Déjà inscrit ? <Link to="/login">Connexion</Link></p>
       </div>
     </div>
+    </>
   );
 }
 
