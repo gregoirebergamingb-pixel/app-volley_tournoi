@@ -988,12 +988,6 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onRequestJoin, onL
   const canJoin     = !myTeam && !blockReason && !isPast;
   const hasRequested = !isMyTeam && (team.joinRequests || []).some(r => r.userId === user.id);
 
-  const confirmJoin = () => {
-    onJoin(team.id, joinExternals);
-    setShowJoinForm(false);
-    setJoinExternals([]);
-  };
-
   const cancelJoin = () => {
     setShowJoinForm(false);
     setJoinExternals([]);

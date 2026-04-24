@@ -43,7 +43,6 @@ function CreateTournamentWizard({ user }) {
   const [price, setPrice]           = useState('');
   const [externalUrl, setExternalUrl] = useState('');
   const [similarTournament, setSimilarTournament] = useState(null);
-  const [pendingSubmit, setPendingSubmit]         = useState(false);
 
   const [suggestions, setSuggestions]       = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -143,7 +142,6 @@ function CreateTournamentWizard({ user }) {
       );
       if (res.data.length > 0) {
         setSimilarTournament(res.data[0]);
-        setPendingSubmit(true);
         return;
       }
     } catch { /* ignore, proceed to create */ }
@@ -303,7 +301,7 @@ function CreateTournamentWizard({ user }) {
       {similarTournament && (
         <div style={{ position:'fixed', inset:0, background:'rgba(10,18,40,0.6)', zIndex:400,
           display:'flex', alignItems:'center', justifyContent:'center', padding:'0 20px' }}
-          onClick={() => { setSimilarTournament(null); setPendingSubmit(false); }}>
+          onClick={() => { setSimilarTournament(null); }}>
           <div style={{ background:'white', borderRadius:20, padding:'24px 20px', width:'100%',
             maxWidth:390, boxShadow:'0 12px 40px rgba(0,0,0,0.25)' }}
             onClick={e => e.stopPropagation()}>
@@ -330,7 +328,7 @@ function CreateTournamentWizard({ user }) {
                 ✅ Oui, c'est ce tournoi
               </button>
               <button className="button-secondary" style={{ width:'100%', padding:'13px' }}
-                onClick={() => { setSimilarTournament(null); setPendingSubmit(false); doCreate(); }}>
+                onClick={() => { setSimilarTournament(null); doCreate(); }}>
                 ➕ Non, créer un autre tournoi
               </button>
             </div>
