@@ -977,7 +977,6 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onRequestJoin, onL
   onRemoveExternal, actionLoading, myTeam, isPast, onResultsClick, onNavigateProfile }) {
 
   const [showJoinForm, setShowJoinForm] = useState(false);
-  const [joinExternals, setJoinExternals] = useState([]);
 
   const isCreator     = team.creator === user.id;
   const externals     = team.externalMembers || [];
@@ -988,10 +987,7 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onRequestJoin, onL
   const canJoin     = !myTeam && !blockReason && !isPast;
   const hasRequested = !isMyTeam && (team.joinRequests || []).some(r => r.userId === user.id);
 
-  const cancelJoin = () => {
-    setShowJoinForm(false);
-    setJoinExternals([]);
-  };
+  const cancelJoin = () => { setShowJoinForm(false); };
 
   return (
     <div className={`team-card ${isMyTeam ? 'team-card-mine' : ''}`}>
