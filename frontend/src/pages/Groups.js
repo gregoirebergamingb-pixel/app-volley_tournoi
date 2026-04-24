@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AvatarMenu from '../components/AvatarMenu';
 
@@ -19,6 +19,7 @@ function initials(firstName, lastName) {
 
 function Groups({ user, onLogout }) {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [groups, setGroups]       = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
@@ -185,6 +186,7 @@ function Groups({ user, onLogout }) {
     <>
       <div className="app-header">
         <div className="header-inner">
+          <span className="back-btn" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)}>← Retour</span>
           <div className="header-row">
             <div>
               <div className="header-title">Mes Groupes</div>
@@ -345,7 +347,8 @@ function Groups({ user, onLogout }) {
                           <div key={m.id} className="group-member-row">
                             <span className={`rank-badge ${rankClass}`}>{rank}</span>
                             <div className={`av-circle av-md ${!m.avatarUrl ? avatarColor(m.id) : ''}`}
-                              style={{ flexShrink:0, border: m.id === user.id ? '2.5px solid var(--primary)' : undefined }}>
+                              style={{ flexShrink:0, border: m.id === user.id ? '2.5px solid var(--primary)' : undefined, cursor:'pointer' }}
+                              onClick={() => navigate(`/profil/${m.id}`)}>
                               {m.avatarUrl
                                 ? <img src={m.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
                                 : initials(m.firstName, m.lastName)

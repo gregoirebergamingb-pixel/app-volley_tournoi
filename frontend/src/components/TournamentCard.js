@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
 const GENDER_BADGE   = { mix: 'badge-purple', masculin: 'badge-orange', feminin: 'badge-teal' };
@@ -46,9 +46,16 @@ export function shortLocation(loc) {
 const MAX_VISIBLE = 5;
 
 function TeamSection({ teamName, memberDetails, externalMembers, filled, maxSize, isComplete }) {
+  const navigate = useNavigate();
   const visible  = (memberDetails || []).slice(0, MAX_VISIBLE);
   const overflow = Math.max(0, (memberDetails || []).length - MAX_VISIBLE);
   const missing  = maxSize - filled;
+
+  const goToProfile = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/profil/${id}`);
+  };
 
   return (
     <div className="team-in-card">
@@ -59,7 +66,9 @@ function TeamSection({ teamName, memberDetails, externalMembers, filled, maxSize
         <div className="team-in-card-avatars" style={{ flex: 1, minWidth: 0 }}>
           {visible.map(m => (
             <div key={m.id} className="team-avatar-with-name">
-              <div className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}>
+              <div className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => goToProfile(e, m.id)}>
                 {m.avatarUrl
                   ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : initials(m.firstName, m.lastName)
@@ -119,6 +128,7 @@ function TournamentCard({
   onDelete,
   actionLoading,
   onAddToGroup,
+  alreadyInGroups,
 }) {
   const countdown    = daysUntil(tournament.date);
   const genderLabel  = GENDER_LABELS[tournament.gender]   || '';
@@ -138,9 +148,10 @@ function TournamentCard({
   const myTeamFilled   = (myTeam?.members?.length || 0) + (myTeam?.externalMembers?.length || 0);
   const myTeamComplete = !!(myTeam && myTeamFilled >= myTeam.maxSize);
 
-  const showAddToGroup = !isCreator && !!onAddToGroup;
-  const showTeamCount  = !isCreator && teamCount !== undefined;
-  const hasFooter      = isCreator || showAddToGroup || showTeamCount;
+  const showAddToGroup  = !isCreator && !!onAddToGroup;
+  const showAlreadyIn   = !isCreator && alreadyInGroups && alreadyInGroups.length > 0;
+  const showTeamCount   = !isCreator && teamCount !== undefined;
+  const hasFooter       = isCreator || showAddToGroup || showAlreadyIn || showTeamCount;
 
   return (
     <Link to={`/tournaments/${tournament.id}`} className="team-entry-link">
@@ -232,6 +243,11 @@ function TournamentCard({
                     onClick={e => { e.preventDefault(); e.stopPropagation(); onAddToGroup(tournament); }}>
                     + Mon groupe
                   </button>
+                )}
+                {showAlreadyIn && (
+                  <span style={{ fontSize: 11, color: '#4CAF50', fontWeight: 600 }}>
+                    ✓ {alreadyInGroups.join(', ')}
+                  </span>
                 )}
                 {showTeamCount && (
                   <span style={{ fontSize: 11, color: '#90A0B0', marginLeft: 'auto' }}>

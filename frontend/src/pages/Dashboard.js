@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import AvatarMenu from '../components/AvatarMenu';
 import TournamentCard from '../components/TournamentCard';
 import DDayPopup from '../components/DDayPopup';
 import ResultsModal from '../components/ResultsModal';
+import NotificationPanel from '../components/NotificationPanel';
 import { daysUntilNum, shortLocation, avatarColor, initials, groupColor } from '../components/TournamentCard';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -74,7 +74,8 @@ function HeroCard({ entry }) {
                 {memberDetails.map(m => (
                   <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                     <div className={`av-circle av-sm ${!m.avatarUrl ? avatarColor(m.id) : ''}`}
-                      style={{ border: '2px solid rgba(255,255,255,0.45)' }}>
+                      style={{ border: '2px solid rgba(255,255,255,0.45)', cursor: 'pointer' }}
+                      onClick={e => { e.stopPropagation(); navigate(`/profil/${m.id}`); }}>
                       {m.avatarUrl
                         ? <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         : initials(m.firstName, m.lastName)
@@ -156,6 +157,10 @@ function Dashboard({ user, onLogout }) {
   const [error, setError]         = useState('');
   const [ddayTournament, setDdayTournament] = useState(null);
   const [resultsEntry, setResultsEntry]     = useState(null);
+  const [showNotifs, setShowNotifs]         = useState(false);
+  const [notifCount, setNotifCount]         = useState(0);
+  const [dashFilter, setDashFilter]         = useState('all');
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
   useEffect(() => { fetchTournaments(); }, []); // eslint-disable-line
@@ -206,13 +211,15 @@ function Dashboard({ user, onLogout }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().split('T')[0];
 
-  const upcoming = entries
+  const filteredEntries = dashFilter === 'mine' ? entries.filter(e => e.myTeam) : entries;
+
+  const upcoming = filteredEntries
     .filter(e => e.tournament.date >= todayStr)
     .sort((a, b) => a.tournament.date.localeCompare(b.tournament.date));
-  const past = entries
+  const past = filteredEntries
     .filter(e => e.tournament.date < todayStr)
     .sort((a, b) => b.tournament.date.localeCompare(a.tournament.date));
-  const nextEntry = upcoming[0] || null;
+  const nextEntry = upcoming.find(e => e.myTeam) || null;
 
   const firstNameOrPseudo = user.firstName || user.pseudo?.split(' ')[0] || '';
 
@@ -229,12 +236,32 @@ function Dashboard({ user, onLogout }) {
                   : 'Vos prochains tournois'}
               </div>
             </div>
-            <AvatarMenu user={user} onLogout={onLogout} />
+            <AvatarMenu user={user} onLogout={onLogout} notifCount={notifCount}
+              onNotifClick={() => setShowNotifs(true)} />
           </div>
         </div>
       </div>
 
       <div className="page-content" ref={pageRef} onTouchStart={ptrStart} onTouchEnd={ptrEnd}>
+        {/* Barre filtres + bouton */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[['all','Tous'], ['mine','Mes tournois']].map(([v, label]) => (
+              <button key={v} onClick={() => setDashFilter(v)}
+                style={{ padding:'5px 14px', borderRadius:20, fontSize:12, fontWeight:700, border: dashFilter === v ? '1.5px solid var(--primary)' : '1.5px solid var(--border)', cursor:'pointer',
+                  background: dashFilter === v ? 'var(--primary)' : 'white',
+                  color: dashFilter === v ? 'white' : 'var(--sub)' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)', margin: '0 4px' }} />
+          <button onClick={() => navigate('/creer')}
+            style={{ marginLeft: 'auto', padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              border: 'none', cursor: 'pointer', background: '#2E7D32', color: 'white', whiteSpace: 'nowrap' }}>
+            Ajouter un tournoi
+          </button>
+        </div>
         {ptrRefreshing && (
           <div className="ptr-indicator"><div className="ptr-spinner" /><span>Actualisation…</span></div>
         )}
@@ -300,6 +327,14 @@ function Dashboard({ user, onLogout }) {
             setResultsEntry(null);
             if (saved) fetchTournaments();
           }}
+        />
+      )}
+
+      {showNotifs && (
+        <NotificationPanel
+          token={token}
+          onClose={() => setShowNotifs(false)}
+          onCountChange={setNotifCount}
         />
       )}
     </>

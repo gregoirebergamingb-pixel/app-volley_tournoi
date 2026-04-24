@@ -179,7 +179,7 @@ function verifyToken(req, res, next) {
 // Inscription
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, gender, phone, level, avatarUrl } = req.body;
+    const { email, password, firstName, lastName, gender, phone, level, avatarUrl, position } = req.body;
 
     if (!email || !password || !firstName || !lastName || !gender || !level) {
       return res.status(400).json({ error: 'Email, mot de passe, prénom, nom, genre et niveau requis' });
@@ -203,6 +203,7 @@ app.post('/api/auth/register', async (req, res) => {
       id: userId, email, password: hashedPassword, firstName, lastName, gender, level,
       phone: phone || '',
       avatarUrl: avatarUrl || null,
+      position: ['passeur','attaquant'].includes(position) ? position : null,
       createdAt: new Date(), groups: [], tournaments: []
     });
 
@@ -210,7 +211,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.json({
       message: 'Inscription réussie!',
       token, userId,
-      user: { id: userId, email, firstName, lastName, gender, level, phone: phone || '', avatarUrl: avatarUrl || null }
+      user: { id: userId, email, firstName, lastName, gender, level, phone: phone || '', avatarUrl: avatarUrl || null, position: position || null }
     });
   } catch (error) {
     console.error('Erreur inscription:', error);
@@ -241,7 +242,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({
       message: 'Connexion réussie!',
       token, userId: user.id,
-      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, gender: user.gender, level: user.level, avatarUrl: user.avatarUrl || null }
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, gender: user.gender, level: user.level, avatarUrl: user.avatarUrl || null, position: user.position || null }
     });
   } catch (error) {
     console.error('Erreur connexion:', error);
@@ -255,7 +256,7 @@ app.get('/api/auth/profile', verifyToken, async (req, res) => {
     const userDoc = await db.collection('users').doc(req.userId).get();
     if (!userDoc.exists) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     const u = userDoc.data();
-    res.json({ id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, gender: u.gender, level: u.level, phone: u.phone, avatarUrl: u.avatarUrl || null });
+    res.json({ id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, gender: u.gender, level: u.level, phone: u.phone, avatarUrl: u.avatarUrl || null, position: u.position || null });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -264,7 +265,7 @@ app.get('/api/auth/profile', verifyToken, async (req, res) => {
 // Mise à jour du profil
 app.put('/api/auth/profile', verifyToken, async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, gender, level, avatarUrl, currentPassword, newPassword } = req.body;
+    const { firstName, lastName, phone, email, gender, level, avatarUrl, currentPassword, newPassword, position } = req.body;
 
     if (!firstName || !lastName || !email || !gender || !level) {
       return res.status(400).json({ error: 'Prénom, nom, email, genre et niveau sont requis' });
@@ -292,6 +293,7 @@ app.put('/api/auth/profile', verifyToken, async (req, res) => {
       email,
       gender,
       level,
+      position: ['passeur','attaquant'].includes(position) ? position : null,
     };
 
     if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl || null;
@@ -306,6 +308,39 @@ app.put('/api/auth/profile', verifyToken, async (req, res) => {
 
     await db.collection('users').doc(req.userId).update(updates);
 
+    // Propagate avatarUrl/level/name changes to memberDetails in all teams
+    const needsPropagate = updates.avatarUrl !== undefined || updates.level || updates.firstName || updates.lastName;
+    if (needsPropagate) {
+      try {
+        const groupsSnap = await db.collection('groups')
+          .where('members', 'array-contains', req.userId).get();
+        const batch = db.batch();
+        for (const groupDoc of groupsSnap.docs) {
+          const tournamentsSnap = await db.collection('tournaments')
+            .where('groupId', '==', groupDoc.id).get();
+          for (const tDoc of tournamentsSnap.docs) {
+            const teamsSnap = await db.collection('tournaments')
+              .doc(tDoc.id).collection('teams')
+              .where('members', 'array-contains', req.userId).get();
+            for (const teamDoc of teamsSnap.docs) {
+              const details = (teamDoc.data().memberDetails || []).map(m => {
+                if (m.id !== req.userId) return m;
+                return {
+                  ...m,
+                  firstName: updates.firstName,
+                  lastName: updates.lastName,
+                  level: updates.level,
+                  avatarUrl: updates.avatarUrl !== undefined ? (updates.avatarUrl || null) : (m.avatarUrl || null),
+                };
+              });
+              batch.update(teamDoc.ref, { memberDetails: details });
+            }
+          }
+        }
+        await batch.commit();
+      } catch (_) {}
+    }
+
     res.json({
       message: 'Profil mis à jour',
       user: {
@@ -317,6 +352,7 @@ app.put('/api/auth/profile', verifyToken, async (req, res) => {
         level: updates.level,
         phone: updates.phone,
         avatarUrl: updates.avatarUrl !== undefined ? updates.avatarUrl : (userData.avatarUrl || null),
+        position: updates.position,
       }
     });
   } catch (error) {
@@ -372,8 +408,11 @@ app.get('/api/users/me/teams', verifyToken, async (req, res) => {
 // Inclut les tournois liés via linkedGroups
 app.get('/api/users/me/tournaments', verifyToken, async (req, res) => {
   try {
-    const groupsSnapshot = await db.collection('groups')
-      .where('members', 'array-contains', req.userId).get();
+    const [groupsSnapshot, currentUserDoc] = await Promise.all([
+      db.collection('groups').where('members', 'array-contains', req.userId).get(),
+      db.collection('users').doc(req.userId).get()
+    ]);
+    const currentUser = currentUserDoc.exists ? currentUserDoc.data() : null;
 
     const result = [];
     const seenTournamentIds = new Set();
@@ -395,7 +434,14 @@ app.get('/api/users/me/tournaments', verifyToken, async (req, res) => {
         const tournament = tDoc.data();
         const teamsSnapshot = await db.collection('tournaments').doc(tournament.id).collection('teams').get();
         const teams = teamsSnapshot.docs.map(d => d.data());
-        const myTeam = teams.find(t => t.members.includes(req.userId)) || null;
+        let myTeam = teams.find(t => t.members.includes(req.userId)) || null;
+        if (myTeam && currentUser) {
+          myTeam = { ...myTeam, memberDetails: (myTeam.memberDetails || []).map(m => {
+            if (m.id !== req.userId) return m;
+            return { ...m, firstName: currentUser.firstName, lastName: currentUser.lastName,
+              level: currentUser.level, avatarUrl: currentUser.avatarUrl || null };
+          })};
+        }
 
         result.push({
           tournament: {
@@ -405,7 +451,7 @@ app.get('/api/users/me/tournaments', verifyToken, async (req, res) => {
             price: tournament.price || 0, surface: tournament.surface || null
           },
           group: { id: group.id, name: group.name },
-          myTeam: myTeam ? { id: myTeam.id, name: myTeam.name, members: myTeam.members, memberDetails: myTeam.memberDetails || [], externalMembers: myTeam.externalMembers || [], maxSize: myTeam.maxSize } : null,
+          myTeam: myTeam ? { id: myTeam.id, name: myTeam.name, creator: myTeam.creator, members: myTeam.members, memberDetails: myTeam.memberDetails || [], externalMembers: myTeam.externalMembers || [], maxSize: myTeam.maxSize, results: myTeam.results || null, joinRequests: myTeam.joinRequests || [] } : null,
           teamCount: teams.length
         });
       }
@@ -634,6 +680,8 @@ app.get('/api/tournaments/search', verifyToken, async (req, res) => {
           price: t.price || 0
         },
         groupName,
+        groupId: t.groupId || null,
+        linkedGroupIds: t.linkedGroups || [],
         teamCount
       });
     }
@@ -1230,8 +1278,10 @@ app.get('/api/users/:userId/profile', verifyToken, async (req, res) => {
     const partnerMap = {};
     const history = [];
 
+    const todayStr = new Date().toISOString().split('T')[0];
     for (const tDoc of allTournamentsSnap.docs) {
       const tData = tDoc.data();
+      if (!tData.date || tData.date >= todayStr) continue; // only past tournaments
       const teamsSnap = await db.collection('tournaments').doc(tDoc.id).collection('teams')
         .where('members', 'array-contains', targetId).get();
       if (teamsSnap.empty) continue;
@@ -1289,7 +1339,7 @@ app.get('/api/users/:userId/profile', verifyToken, async (req, res) => {
     history.sort((a, b) => b.date.localeCompare(a.date));
     res.json({
       id: u.id, firstName: u.firstName, lastName: u.lastName,
-      avatarUrl: u.avatarUrl || null, level: u.level, gender: u.gender,
+      avatarUrl: u.avatarUrl || null, level: u.level, gender: u.gender, position: u.position || null,
       stats, formatStats, surfaceStats,
       history: history.slice(0, 10), partners,
     });
@@ -1312,7 +1362,9 @@ app.get('/api/groups/:groupId/member-stats', verifyToken, async (req, res) => {
     for (const memberId of (groupData.members || [])) {
       stats[memberId] = { id: memberId, tournaments: 0, wins: 0, losses: 0 };
     }
+    const todayStr = new Date().toISOString().split('T')[0];
     for (const tDoc of tournamentsSnap.docs) {
+      if (tDoc.data().date >= todayStr) continue;
       const teamsSnap = await db.collection('tournaments').doc(tDoc.id).collection('teams').get();
       for (const teamDoc of teamsSnap.docs) {
         const team = teamDoc.data();
@@ -1350,6 +1402,142 @@ app.put('/api/tournaments/:tournamentId/teams/:teamId/results', verifyToken, asy
     });
     res.json({ message: 'Résultats enregistrés' });
   } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// ============================================
+// NOTIFICATIONS & JOIN REQUESTS
+// ============================================
+
+// Envoyer une demande pour rejoindre une équipe
+app.post('/api/tournaments/:tournamentId/teams/:teamId/request-join', verifyToken, async (req, res) => {
+  try {
+    const { tournamentId, teamId } = req.params;
+    const tournamentRef = db.collection('tournaments').doc(tournamentId);
+    const teamRef = tournamentRef.collection('teams').doc(teamId);
+    const [tournament, team] = await Promise.all([tournamentRef.get(), teamRef.get()]);
+    if (!tournament.exists) return res.status(404).json({ error: 'Tournoi non trouvé' });
+    if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+
+    const teamData = team.data();
+    if (teamData.members.includes(req.userId)) return res.status(400).json({ error: 'Vous êtes déjà dans cette équipe' });
+
+    const existing = (teamData.joinRequests || []).find(r => r.userId === req.userId);
+    if (existing) return res.status(400).json({ error: 'Vous avez déjà envoyé une demande' });
+
+    const totalOccupied = teamData.members.length + (teamData.externalMembers || []).length;
+    if (totalOccupied >= teamData.maxSize) return res.status(400).json({ error: 'Équipe complète' });
+
+    const userDoc = await db.collection('users').doc(req.userId).get();
+    const userData = userDoc.data();
+
+    const eligibility = checkGenderEligibility(userData.gender, tournament.data().gender, teamData.memberDetails, teamData.maxSize);
+    if (!eligibility.allowed) return res.status(400).json({ error: eligibility.reason });
+
+    const notifRef = db.collection('notifications').doc();
+    await notifRef.set({
+      type: 'join_request',
+      toUserId: teamData.creator,
+      fromUserId: req.userId,
+      fromUser: { firstName: userData.firstName, lastName: userData.lastName, level: userData.level, avatarUrl: userData.avatarUrl || null },
+      tournamentId,
+      tournamentName: tournament.data().name,
+      teamId,
+      teamName: teamData.name,
+      status: 'pending',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await teamRef.update({ joinRequests: admin.firestore.FieldValue.arrayUnion({ userId: req.userId, notifId: notifRef.id }) });
+    res.json({ message: 'Demande envoyée' });
+  } catch (error) {
+    console.error('Erreur request-join:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Lister les notifications de l'utilisateur connecté
+app.get('/api/users/me/notifications', verifyToken, async (req, res) => {
+  try {
+    const snap = await db.collection('notifications')
+      .where('toUserId', '==', req.userId)
+      .where('status', '==', 'pending')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get();
+    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate?.()?.toISOString() || null }));
+    res.json(notifs);
+  } catch (error) {
+    console.error('Erreur notifications:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Approuver une demande de join
+app.post('/api/notifications/:notifId/approve', verifyToken, async (req, res) => {
+  try {
+    const notifRef = db.collection('notifications').doc(req.params.notifId);
+    const notif = await notifRef.get();
+    if (!notif.exists) return res.status(404).json({ error: 'Notification non trouvée' });
+    const notifData = notif.data();
+    if (notifData.toUserId !== req.userId) return res.status(403).json({ error: 'Non autorisé' });
+    if (notifData.status !== 'pending') return res.status(400).json({ error: 'Demande déjà traitée' });
+
+    const { tournamentId, teamId, fromUserId } = notifData;
+    const tournamentRef = db.collection('tournaments').doc(tournamentId);
+    const teamRef = tournamentRef.collection('teams').doc(teamId);
+    const [tournament, team, userDoc] = await Promise.all([tournamentRef.get(), teamRef.get(), db.collection('users').doc(fromUserId).get()]);
+
+    if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+    const teamData = team.data();
+    const userData = userDoc.data();
+
+    if (teamData.members.includes(fromUserId)) {
+      await notifRef.update({ status: 'approved' });
+      return res.json({ message: 'Joueur déjà dans l\'équipe' });
+    }
+
+    const totalOccupied = teamData.members.length + (teamData.externalMembers || []).length;
+    if (totalOccupied >= teamData.maxSize) return res.status(400).json({ error: 'Équipe complète' });
+
+    const eligibility = checkGenderEligibility(userData.gender, tournament.data().gender, teamData.memberDetails, teamData.maxSize);
+    if (!eligibility.allowed) return res.status(400).json({ error: eligibility.reason });
+
+    const updatedDetails = [...teamData.memberDetails, { id: fromUserId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level, avatarUrl: userData.avatarUrl || null }];
+    const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
+    const updatedRequests = (teamData.joinRequests || []).filter(r => r.userId !== fromUserId);
+
+    await teamRef.update({ members: [...teamData.members, fromUserId], memberDetails: updatedDetails, averageLevel, averageLevelLabel, joinRequests: updatedRequests });
+    await notifRef.update({ status: 'approved' });
+    res.json({ message: 'Demande approuvée' });
+  } catch (error) {
+    console.error('Erreur approve:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Refuser une demande de join
+app.post('/api/notifications/:notifId/deny', verifyToken, async (req, res) => {
+  try {
+    const notifRef = db.collection('notifications').doc(req.params.notifId);
+    const notif = await notifRef.get();
+    if (!notif.exists) return res.status(404).json({ error: 'Notification non trouvée' });
+    const notifData = notif.data();
+    if (notifData.toUserId !== req.userId) return res.status(403).json({ error: 'Non autorisé' });
+    if (notifData.status !== 'pending') return res.status(400).json({ error: 'Demande déjà traitée' });
+
+    const { tournamentId, teamId, fromUserId } = notifData;
+    const teamRef = db.collection('tournaments').doc(tournamentId).collection('teams').doc(teamId);
+    const team = await teamRef.get();
+    if (team.exists) {
+      const updatedRequests = (team.data().joinRequests || []).filter(r => r.userId !== fromUserId);
+      await teamRef.update({ joinRequests: updatedRequests });
+    }
+    await notifRef.update({ status: 'denied' });
+    res.json({ message: 'Demande refusée' });
+  } catch (error) {
+    console.error('Erreur deny:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

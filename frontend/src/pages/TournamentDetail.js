@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import ResultsModal from '../components/ResultsModal';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
@@ -109,6 +110,7 @@ function downloadICS(t) {
 
 function TournamentDetail({ user }) {
   const { tournamentId } = useParams();
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
   const [tournament, setTournament]   = useState(null);
@@ -129,6 +131,7 @@ function TournamentDetail({ user }) {
   const [levelFilters, setLevelFilters] = useState(new Set());
   const [filtersOpen, setFiltersOpen]   = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [resultsModalTeam, setResultsModalTeam] = useState(null);
 
   // Edit tournament
   const [editingTournament, setEditingTournament] = useState(false);
@@ -198,6 +201,17 @@ function TournamentDetail({ user }) {
     try {
       await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${teamId}/join`,
         { externalMembers },
+        { headers: { Authorization: `Bearer ${token}` } });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur');
+    } finally { setActionLoading(false); }
+  };
+
+  const handleRequestJoin = async (teamId) => {
+    setActionLoading(true); setError('');
+    try {
+      await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${teamId}/request-join`, {},
         { headers: { Authorization: `Bearer ${token}` } });
       fetchData();
     } catch (err) {
@@ -336,7 +350,7 @@ function TournamentDetail({ user }) {
     <>
       <div className="app-header">
         <div className="header-inner">
-          <Link to="/" className="back-btn">← Accueil</Link>
+          <span className="back-btn" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)}>← Retour</span>
           <div className="header-row"><div className="header-title">Chargement…</div></div>
         </div>
       </div>
@@ -347,7 +361,7 @@ function TournamentDetail({ user }) {
     <>
       <div className="app-header">
         <div className="header-inner">
-          <Link to="/" className="back-btn">← Accueil</Link>
+          <span className="back-btn" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)}>← Retour</span>
           <div className="header-row"><div className="header-title">Tournoi introuvable</div></div>
         </div>
       </div>
@@ -356,6 +370,7 @@ function TournamentDetail({ user }) {
 
   const myTeam = teams.find(t => t.members.includes(user.id));
   const isCreator = tournament.creator === user.id;
+  const isPast = tournament.date < new Date().toISOString().split('T')[0];
 
   const dateStr = tournament.date
     ? new Date(tournament.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -391,7 +406,7 @@ function TournamentDetail({ user }) {
     <>
       <div className="app-header">
         <div className="header-inner">
-          <Link to="/" className="back-btn">← Accueil</Link>
+          <span className="back-btn" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)}>← Retour</span>
           <div className="header-row">
             <div style={{ minWidth:0 }}>
               <div className="header-title">{tournament.name}</div>
@@ -683,12 +698,16 @@ function TournamentDetail({ user }) {
               user={user}
               tournament={tournament}
               onJoin={handleJoinTeam}
+              onRequestJoin={handleRequestJoin}
               onLeave={handleLeaveTeam}
               onDelete={handleDeleteTeam}
               onEdit={openEditTeam}
               onRemoveExternal={handleRemoveExternal}
               actionLoading={actionLoading}
               myTeam={myTeam}
+              isPast={isPast}
+              onResultsClick={() => setResultsModalTeam(myFilteredTeam)}
+              onNavigateProfile={(id) => navigate(`/profil/${id}`)}
             />
           </>
         )}
@@ -704,12 +723,15 @@ function TournamentDetail({ user }) {
                 user={user}
                 tournament={tournament}
                 onJoin={handleJoinTeam}
+                onRequestJoin={handleRequestJoin}
                 onLeave={handleLeaveTeam}
                 onDelete={handleDeleteTeam}
                 onEdit={openEditTeam}
                 onRemoveExternal={handleRemoveExternal}
                 actionLoading={actionLoading}
                 myTeam={myTeam}
+                isPast={isPast}
+                onNavigateProfile={(id) => navigate(`/profil/${id}`)}
               />
             ))}
           </>
@@ -730,6 +752,16 @@ function TournamentDetail({ user }) {
           </div>
         )}
       </div>
+
+      {/* ── Results modal ── */}
+      {resultsModalTeam && tournament && (
+        <ResultsModal
+          tournament={tournament}
+          team={resultsModalTeam}
+          token={token}
+          onClose={(saved) => { setResultsModalTeam(null); if (saved) fetchData(); }}
+        />
+      )}
 
       {/* ── Edit team modal ── */}
       {editingTeam && (
@@ -941,8 +973,8 @@ function EditTeamModal({ team, name, setName, visibility, setVisibility, onSave,
   );
 }
 
-function TeamCard({ team, isMyTeam, user, tournament, onJoin, onLeave, onDelete, onEdit,
-  onRemoveExternal, actionLoading, myTeam }) {
+function TeamCard({ team, isMyTeam, user, tournament, onJoin, onRequestJoin, onLeave, onDelete, onEdit,
+  onRemoveExternal, actionLoading, myTeam, isPast, onResultsClick, onNavigateProfile }) {
 
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [joinExternals, setJoinExternals] = useState([]);
@@ -953,7 +985,8 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onLeave, onDelete,
   const isFull        = totalOccupied >= team.maxSize;
   const spotsLeft   = team.maxSize - totalOccupied;
   const blockReason = !isMyTeam && !myTeam ? getJoinBlockReason(user, tournament, team) : null;
-  const canJoin     = !myTeam && !blockReason;
+  const canJoin     = !myTeam && !blockReason && !isPast;
+  const hasRequested = !isMyTeam && (team.joinRequests || []).some(r => r.userId === user.id);
 
   const confirmJoin = () => {
     onJoin(team.id, joinExternals);
@@ -985,7 +1018,9 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onLeave, onDelete,
         {/* Real members */}
         {team.memberDetails.map(member => (
           <div key={member.id} style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-            <div className={`av-circle av-sm ${!member.avatarUrl ? avatarColor(member.id) : ''}`}>
+            <div className={`av-circle av-sm ${!member.avatarUrl ? avatarColor(member.id) : ''}`}
+              style={{ cursor:'pointer' }}
+              onClick={() => onNavigateProfile?.(member.id)}>
               {member.avatarUrl
                 ? <img src={member.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                 : initials(member.firstName, member.lastName)
@@ -1033,35 +1068,30 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onLeave, onDelete,
       <div className="team-actions" style={{ justifyContent:'flex-end' }}>
         {isMyTeam ? (
           <>
+            {isPast && !team.results && (
+              <button className="button-secondary btn-sm" onClick={onResultsClick}>
+                📊 Résultats
+              </button>
+            )}
             <button className="button-secondary btn-sm" onClick={() => onEdit(team)}>Modifier</button>
             {isCreator
               ? <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onDelete(team)}>Supprimer</button>
               : <button className="button-danger btn-sm" disabled={actionLoading} onClick={() => onLeave(team.id)}>Quitter</button>
             }
           </>
+        ) : hasRequested ? (
+          <button disabled style={{ opacity:0.6, cursor:'default', background:'#EEF2FB', color:'var(--primary)', border:'1px solid var(--border)', borderRadius:10, padding:'7px 14px', fontSize:13, fontWeight:700 }}>
+            ✓ Demande envoyée
+          </button>
         ) : canJoin ? (
           showJoinForm ? (
             <div style={{ width:'100%' }}>
               <p style={{ fontSize:12, color:'#445', fontWeight:600, marginBottom:8 }}>
-                Rejoindre <strong>{team.name}</strong>
+                Envoyer une demande pour <strong>{team.name}</strong>
               </p>
-              {/* Self slot */}
-              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
-                <div className={`av-circle av-sm ${avatarColor(user.id)}`}>
-                  {initials(user.firstName, user.lastName)}
-                </div>
-                <span style={{ fontSize:12, color:'#445' }}>Vous</span>
-              </div>
-              {/* External slots */}
-              <ExternalMembersEditor
-                slots={joinExternals}
-                onChange={setJoinExternals}
-                maxSlots={spotsLeft - 1}
-                label="Ajouter un invité"
-              />
               <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                <button disabled={actionLoading} onClick={confirmJoin}>
-                  Rejoindre ({1 + joinExternals.length} place{1+joinExternals.length>1?'s':''})
+                <button disabled={actionLoading} onClick={() => { onRequestJoin(team.id); setShowJoinForm(false); }}>
+                  Envoyer la demande
                 </button>
                 <button className="button-secondary" onClick={cancelJoin}>Annuler</button>
               </div>

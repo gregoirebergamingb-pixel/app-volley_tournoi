@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function AvatarMenu({ user, onLogout }) {
+function AvatarMenu({ user, onLogout, notifCount = 0, onNotifClick }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -35,12 +35,12 @@ function AvatarMenu({ user, onLogout }) {
           <div className="avatar-menu-item" style={{ fontWeight: 700, cursor: 'default', color: '#90A0B0', fontSize: 12 }}>
             {displayName}
           </div>
-          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/profile'); }}>
-            ⚙️ Mon profil
+          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go(`/profil/${user?.id}`); }}>
+            👤 Mon profil
           </div>
-
-          <div className="avatar-menu-sep" />
-
+          <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); setOpen(false); onNotifClick?.(); }}>
+            🔔 Notifications{notifCount > 0 && <span style={{ marginLeft:6, background:'#E53935', color:'white', borderRadius:10, fontSize:10, fontWeight:800, padding:'1px 6px' }}>{notifCount}</span>}
+          </div>
           <div className="avatar-menu-item" onClick={e => { e.stopPropagation(); go('/groups'); }}>
             👥 Mes groupes
           </div>

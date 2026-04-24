@@ -9,6 +9,7 @@
   --bg:            #F5F8FF;
   --white:         #ffffff;
   --text:          #1A2440;
+  --sub:           #788899;
   --text-muted:    #788899;
   --border:        #E8EEF4;
   --shadow-sm:     0 2px 8px rgba(0,0,0,0.07);
@@ -89,7 +90,7 @@ body {
   position: relative;
   padding-top: 23px;
   padding-bottom: 14px;
-  min-height: 80px;
+  min-height: 86px;
 }
 .header-row {
   display: flex;
@@ -1341,7 +1342,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* Spotlight onglet nav : rectangulaire */
 .ob-spot {
   position: absolute; bottom: 0;
-  width: calc(min(430px, 100vw) / 3);
+  width: calc(min(430px, 100vw) / 2);
   height: var(--nav-height);
   background: transparent;
   box-shadow: 0 0 0 9999px rgba(10, 18, 40, 0.84);
@@ -1349,12 +1350,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   transition: left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ob-spot-0 { left: calc((100vw - min(430px, 100vw)) / 2); }
-.ob-spot-1 { left: calc((100vw - min(430px, 100vw)) / 2 + min(430px, 100vw) / 3); }
-.ob-spot-2 { left: calc((100vw - min(430px, 100vw)) / 2 + 2 * min(430px, 100vw) / 3); }
+.ob-spot-1 { left: calc((100vw - min(430px, 100vw)) / 2 + min(430px, 100vw) / 2); }
 
 /* Spotlight avatar : circulaire en haut à droite */
 .ob-spot-avatar {
-  position: absolute; top: 10px;
+  position: absolute; top: 28px;
   right: calc((100vw - min(430px, 100vw)) / 2 + 10px);
   width: 56px; height: 56px;
   border-radius: 50%;
@@ -1364,7 +1364,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* Faux menu avatar ouvert pendant l'étape 1 */
 .ob-fake-menu {
   position: absolute;
-  top: 74px;
+  top: 92px;
   right: calc((100vw - min(430px, 100vw)) / 2 + 10px);
   z-index: 2;
   animation: obBubbleIn 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
@@ -1389,7 +1389,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 .ob-bubble-below-avatar {
   bottom: auto;
-  top: 88px;
+  top: 290px;
   animation: obBubbleBelowIn 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 @keyframes obBubbleBelowIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -1426,5 +1426,76 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   border-radius: 20px; padding: 6px 14px;
   font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
   transition: background 0.15s;
+}
+
+/* ══════════════════════════════════════════
+   UX / DESIGN-SYSTEM IMPROVEMENTS
+   ══════════════════════════════════════════ */
+
+/* ── Missing keyframe fix (bottom sheets) ── */
+@keyframes filterDrawerUp {
+  from { transform: translateY(60px); opacity: 0.85; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Card title (PublicProfile, stats cards) ── */
+.card-title {
+  font-size: 14px; font-weight: 800; color: var(--text);
+  font-family: 'Fraunces', Georgia, serif; margin-bottom: 8px;
+}
+
+/* ── Athletic stat numbers — Barlow Condensed ── */
+.stat-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800; letter-spacing: -0.02em;
+}
+.section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 12px;
+}
+
+/* ── Header avatar: 44×44 minimum touch target ── */
+.header-avatar { width: 44px; height: 44px; }
+
+/* ── Active feedback on interactive cards ── */
+.hero-card { transition: opacity 0.12s; }
+.hero-card:active { opacity: 0.88; }
+
+.group-card { transition: box-shadow 0.15s, opacity 0.12s; cursor: pointer; }
+.group-card:active { opacity: 0.88; }
+
+.mini-tourn-row { transition: background 0.12s; }
+.mini-tourn-row:hover  { background: #F5F8FF; }
+.mini-tourn-row:active { background: #EEF4FF; }
+
+/* ── Group member row: hover/active for clickable avatars ── */
+.group-member-row { transition: background 0.12s; }
+.group-member-row:hover { background: #F8FAFF; }
+
+/* ── Nav item active press feedback ── */
+.nav-item { transition: opacity 0.1s; }
+.nav-item:active { opacity: 0.65; }
+
+/* ── Chip active press ── */
+.chip { transition: all 0.15s; }
+.chip:active { opacity: 0.75; }
+
+/* ── Player search item active press ── */
+.player-search-item:active { background: #EEF4FF; }
+
+/* ── Tournament row hover ── */
+.tournament-row { transition: background 0.12s, box-shadow 0.12s; cursor: pointer; }
+.tournament-row:hover  { background: #F8FAFF; box-shadow: var(--shadow-sm); }
+.tournament-row:active { background: #EEF4FF; }
+
+/* ── prefers-reduced-motion: strip all animations ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .ptr-spinner { animation: none; }
+  .sk-line, .sk-badge { animation: none; background: #EEF2F8; }
 }
 .ob-skip:hover { background: rgba(255,255,255,0.24); }

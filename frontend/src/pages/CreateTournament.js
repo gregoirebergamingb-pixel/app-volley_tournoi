@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -156,7 +156,7 @@ function CreateTournament({ user }) {
     <>
       <div className="app-header">
         <div className="header-inner">
-          <Link to={`/groups/${groupId}`} className="back-btn">← Retour au groupe</Link>
+          <span className="back-btn" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)}>← Retour</span>
           <div className="header-row">
             <div className="header-title">Créer un tournoi</div>
           </div>

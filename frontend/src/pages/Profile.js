@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CropModal from '../components/CropModal';
 
@@ -15,6 +15,7 @@ const LEVEL_LABELS = {
 
 function Profile({ user, onLogout, onUserUpdate }) {
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();
 
   const [firstName, setFirstName]   = useState(user?.firstName || '');
   const [lastName, setLastName]     = useState(user?.lastName  || '');
@@ -22,6 +23,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
   const [email, setEmail]           = useState(user?.email     || '');
   const [gender, setGender]         = useState(user?.gender    || '');
   const [level, setLevel]           = useState(user?.level     || '');
+  const [position, setPosition]     = useState(user?.position  || '');
   const [avatar, setAvatar]         = useState(user?.avatarUrl || null);
   const [avatarChanged, setAvatarChanged] = useState(false);
   const [cropSrc, setCropSrc]       = useState(null);
@@ -63,7 +65,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
       const body = {
         firstName: fn.charAt(0).toUpperCase() + fn.slice(1).toLowerCase(),
         lastName: ln.toUpperCase(),
-        phone, email, gender, level
+        phone, email, gender, level, position: position || null
       };
       if (avatarChanged)        body.avatarUrl = avatar;
       if (showPassword && newPwd) { body.currentPassword = currentPwd; body.newPassword = newPwd; }
@@ -104,7 +106,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
       {/* Header */}
       <div className="app-header">
         <div className="header-inner">
-          <Link to="/dashboard" className="back-btn">← Retour</Link>
+          <span className="back-btn" style={{ cursor: 'pointer' }} onClick={() => navigate(-1)}>← Retour</span>
           <div className="header-row">
             <div className="header-title">Mon Profil</div>
           </div>
@@ -191,7 +193,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className="form-group">
               <label htmlFor="p-level">
                 Niveau de jeu
                 {levelInfo && (
@@ -212,6 +214,20 @@ function Profile({ user, onLogout, onUserUpdate }) {
                 <option value="national">National</option>
                 <option value="pro">Pro</option>
               </select>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Poste de jeu <span style={{ fontSize:11, color:'#90A0B0', fontWeight:400 }}>(optionnel)</span></label>
+              <div className="gender-selector">
+                {[['passeur', 'Passeur'], ['attaquant', 'Attaquant']].map(([val, lbl]) => (
+                  <div key={val}
+                    className={`gender-option ${position === val ? 'selected' : ''}`}
+                    onClick={() => setPosition(p => p === val ? '' : val)}
+                    style={{ cursor: 'pointer' }}>
+                    {lbl}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

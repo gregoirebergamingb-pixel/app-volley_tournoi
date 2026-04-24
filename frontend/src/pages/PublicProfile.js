@@ -110,7 +110,9 @@ export default function PublicProfile({ user }) {
   );
 
   const { stats, formatStats, surfaceStats, history, partners } = profile;
-  const levelInfo = LEVEL_LABELS[profile.level];
+  const levelInfo   = LEVEL_LABELS[profile.level];
+  const POSITION_LABELS = { passeur: { label: 'Passeur', color: '#1565C0', bg: '#E3F2FD' }, attaquant: { label: 'Attaquant', color: '#E65100', bg: '#FFF3E0' } };
+  const positionInfo = POSITION_LABELS[profile.position];
   const totalMatches = stats.wins + stats.losses;
   const winPct = totalMatches > 0 ? Math.round(stats.wins / totalMatches * 100) : null;
 
@@ -151,13 +153,21 @@ export default function PublicProfile({ user }) {
               )}
             </div>
 
-            {/* Level badge */}
-            {levelInfo && (
-              <div style={{ background:'rgba(255,255,255,0.18)', color:'white',
-                borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:700 }}>
-                {levelInfo.label}
-              </div>
-            )}
+            {/* Level + position badges */}
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center' }}>
+              {levelInfo && (
+                <div style={{ background:'rgba(255,255,255,0.18)', color:'white',
+                  borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:700 }}>
+                  {levelInfo.label}
+                </div>
+              )}
+              {positionInfo && (
+                <div style={{ background:'rgba(255,255,255,0.18)', color:'white',
+                  borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:700 }}>
+                  {positionInfo.label}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -176,7 +186,7 @@ export default function PublicProfile({ user }) {
           ].map((s, i, arr) => (
             <div key={i} style={{ padding:'13px 6px', display:'flex', flexDirection:'column',
               alignItems:'center', gap:3, borderRight: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
-              <div style={{ fontSize:20, fontWeight:900, color: i === 0 ? 'var(--primary)' : 'var(--text)', lineHeight:1 }}>
+              <div className="stat-num" style={{ fontSize:22, color: i === 0 ? 'var(--primary)' : 'var(--text)', lineHeight:1 }}>
                 {s.val}
               </div>
               <div style={{ fontSize:9, fontWeight:600, color:'var(--sub)', textAlign:'center', lineHeight:1.3 }}>
@@ -194,14 +204,11 @@ export default function PublicProfile({ user }) {
               % de matchs gagnés dans ce format
             </div>
             {formats.map(f => (
-              <WinBar key={f} {...formatStats[f]} color="var(--primary)" />
+              <div key={f} style={{ marginBottom:10 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--sub)', marginBottom:3 }}>{f}</div>
+                <WinBar {...formatStats[f]} color="var(--primary)" />
+              </div>
             ))}
-            {/* Label sous les barres */}
-            <div style={{ display:'flex', gap:6, marginTop:6 }}>
-              {formats.map(f => (
-                <span key={f} style={{ fontSize:11, fontWeight:700, color:'var(--sub)' }}>{f}</span>
-              ))}
-            </div>
           </div>
         )}
 

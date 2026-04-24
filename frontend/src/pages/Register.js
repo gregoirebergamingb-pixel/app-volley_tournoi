@@ -13,6 +13,7 @@ function Register({ onLogin }) {
   const [phone, setPhone]                     = useState('');
   const [gender, setGender]                   = useState('');
   const [level, setLevel]                     = useState('');
+  const [position, setPosition]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [avatarBase64, setAvatarBase64]       = useState(null);
   const [cropSrc, setCropSrc]                 = useState(null);
@@ -47,8 +48,10 @@ function Register({ onLogin }) {
       const res = await axios.post(`${API_URL}/api/auth/register`, {
         email, password,
         firstName: normalFirst, lastName: normalLast,
-        gender, level, phone, avatarUrl: avatarBase64 || null
+        gender, level, phone, avatarUrl: avatarBase64 || null,
+        position: position || null
       });
+      localStorage.removeItem('onboarding_done');
       onLogin(res.data.token, res.data.user);
       if (inviteCode) {
         navigate(`/rejoindre/${inviteCode}`);
@@ -144,6 +147,20 @@ function Register({ onLogin }) {
             <option value="national">National</option>
             <option value="pro">Pro</option>
           </select>
+        </div>
+
+        <div className="form-group">
+          <label>Poste de jeu <span style={{ fontSize:11, color:'#90A0B0', fontWeight:400 }}>(optionnel)</span></label>
+          <div className="gender-selector">
+            {[['passeur', 'Passeur'], ['attaquant', 'Attaquant']].map(([val, lbl]) => (
+              <div key={val}
+                className={`gender-option ${position === val ? 'selected' : ''}`}
+                onClick={() => setPosition(p => p === val ? '' : val)}
+                style={{ cursor: 'pointer' }}>
+                {lbl}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="form-group">

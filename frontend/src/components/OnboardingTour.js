@@ -12,24 +12,17 @@ const STEPS = [
   },
   {
     spotType: 'tab',
-    tabIndex: 0,
+    tabIndex: 1,
     icon: '🔍',
     title: 'Explorer',
     text: 'Trouve des tournois près de chez toi et filtre par format pour les ajouter à ton groupe.',
   },
   {
     spotType: 'tab',
-    tabIndex: 1,
+    tabIndex: 0,
     icon: '🏠',
     title: 'Accueil',
-    text: 'Retrouve tous les tournois ajoutés par les membres de tes groupes et crée tes équipes.',
-  },
-  {
-    spotType: 'tab',
-    tabIndex: 2,
-    icon: '➕',
-    title: 'Ajouter',
-    text: 'Ajoute un tournoi pour que tes potes et toi puissiez organiser vos équipes.',
+    text: 'Retrouve tous les tournois de tes groupes, crée tes équipes et ajoute tes propres tournois.',
   },
   {
     spotType: null,
@@ -73,7 +66,8 @@ function OnboardingTour({ onDone }) {
           <div className="avatar-menu-item" style={{ fontWeight:700, cursor:'default', color:'#90A0B0', fontSize:12 }}>
             Mon compte
           </div>
-          <div className="avatar-menu-item">⚙️ Mon profil</div>
+          <div className="avatar-menu-item">👤 Mon profil</div>
+          <div className="avatar-menu-item">🔔 Notifications</div>
           <div className="avatar-menu-sep" />
           <div className="avatar-menu-item" style={{ fontWeight:800, color:'var(--primary)' }}>
             👥 Mes groupes

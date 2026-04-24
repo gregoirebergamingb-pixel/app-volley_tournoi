@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AvatarMenu from '../components/AvatarMenu';
 import TournamentCard from '../components/TournamentCard';
-import { groupColor } from '../components/TournamentCard';
+import { groupColor, avatarColor, initials } from '../components/TournamentCard';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -12,6 +13,51 @@ const DATE_GROUPS = [
   { key: 'month',   label: 'Ce mois' },
   { key: 'later',   label: 'Plus tard' },
 ];
+
+const LEVEL_LABELS = {
+  loisir:        { label: 'Loisir',        color: '#2E7D32', bg: '#E8F5E9' },
+  departemental: { label: 'Départemental', color: '#1565C0', bg: '#E3F2FD' },
+  regional:      { label: 'Régional',      color: '#7B1FA2', bg: '#F3E5F5' },
+  national:      { label: 'National',      color: '#E65100', bg: '#FFF3E0' },
+  pro:           { label: 'Pro',           color: '#C62828', bg: '#FFEBEE' },
+};
+
+function MemberCard({ member, onInvite }) {
+  const nav = useNavigate();
+  const lvl = LEVEL_LABELS[member.level];
+  return (
+    <div className="t-card" style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+      onClick={() => nav(`/profil/${member.id}`)}>
+      <div className={`av-circle ${!member.avatarUrl ? avatarColor(member.id) : ''}`}
+        style={{ width: 44, height: 44, flexShrink: 0, fontSize: 15, fontWeight: 700 }}>
+        {member.avatarUrl
+          ? <img src={member.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+          : initials(member.firstName, member.lastName)
+        }
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#1A2440', marginBottom: 3 }}>
+          {member.firstName} {member.lastName}
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          {lvl && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: lvl.bg, color: lvl.color }}>
+              {lvl.label}
+            </span>
+          )}
+          {member.isGroupMember && (
+            <span style={{ fontSize: 11, color: '#4CAF50', fontWeight: 600 }}>✓ Groupe commun</span>
+          )}
+        </div>
+      </div>
+      <button onClick={e => { e.stopPropagation(); onInvite(member); }}
+        style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 16, fontSize: 12, fontWeight: 700,
+          border: '1.5px solid var(--border)', background: 'white', color: 'var(--primary)', cursor: 'pointer' }}>
+        Inviter
+      </button>
+    </div>
+  );
+}
 
 function getDateGroup(dateStr) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -26,8 +72,12 @@ function getDateGroup(dateStr) {
 }
 
 function TournamentSearch({ user, onLogout }) {
+  const [searchMode, setSearchMode] = useState('tournois'); // 'tournois' | 'membres'
   const [query, setQuery]           = useState('');
   const [results, setResults]       = useState([]);
+  const [memberResults, setMemberResults] = useState([]);
+  const [memberLoading, setMemberLoading] = useState(false);
+  const [inviteModal, setInviteModal]     = useState(null);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
   const [hasSearched, setHasSearched] = useState(false);
@@ -45,11 +95,6 @@ function TournamentSearch({ user, onLogout }) {
   const [radius, setRadius]     = useState(() => { const v = sessionStorage.getItem('geo_radius'); return v ? parseInt(v, 10) : 25; });
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
-
-  // Recherches récentes
-  const [recentSearches, setRecentSearches] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('recent_searches') || '[]'); } catch { return []; }
-  });
 
   // Toast de confirmation
   const [toast, setToast] = useState(null);
@@ -96,18 +141,8 @@ function TournamentSearch({ user, onLogout }) {
     sessionStorage.removeItem('geo_radius');
   };
 
-  const saveRecentSearch = useCallback((q) => {
-    if (!q || q.trim().length < 2) return;
-    setRecentSearches(prev => {
-      const updated = [q.trim(), ...prev.filter(s => s !== q.trim())].slice(0, 4);
-      localStorage.setItem('recent_searches', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-
   const search = useCallback(async () => {
     setLoading(true); setError(''); setHasSearched(true);
-    if (query.trim().length >= 2) saveRecentSearch(query.trim());
     try {
       const params = new URLSearchParams();
       if (query)         params.set('q', query);
@@ -130,15 +165,32 @@ function TournamentSearch({ user, onLogout }) {
     } finally {
       setLoading(false);
     }
-  }, [query, formatFilter, genderFilter, dateFilter, surfaceFilter, userLat, userLng, radius, token, saveRecentSearch]);
+  }, [query, formatFilter, genderFilter, dateFilter, surfaceFilter, userLat, userLng, radius, token]);
 
   useEffect(() => {
+    if (searchMode !== 'tournois') return;
     const t = setTimeout(() => {
       if (hasActiveFilter) search();
       else { setResults([]); setHasSearched(false); }
     }, 400);
     return () => clearTimeout(t);
-  }, [query, formatFilter, genderFilter, dateFilter, surfaceFilter, userLat, userLng, radius]); // eslint-disable-line
+  }, [query, formatFilter, genderFilter, dateFilter, surfaceFilter, userLat, userLng, radius, searchMode]); // eslint-disable-line
+
+  useEffect(() => {
+    if (searchMode !== 'membres') { setMemberResults([]); return; }
+    if (query.length < 2) { setMemberResults([]); return; }
+    const t = setTimeout(async () => {
+      setMemberLoading(true);
+      try {
+        const res = await axios.get(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMemberResults(res.data);
+      } catch { setMemberResults([]); }
+      finally { setMemberLoading(false); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [query, searchMode, token]);
 
   const toggle = (setter) => (val) => setter(v => v === val ? '' : val);
   const toggleFormat  = toggle(setFormatFilter);
@@ -161,6 +213,12 @@ function TournamentSearch({ user, onLogout }) {
     dateFilter    && { key: 'date',    label: dateFilter === 'weekend' ? 'Ce week-end' : 'Ce mois',                                              clear: () => setDateFilter('') },
     userLat       && { key: 'geo',     label: `📍 ${radius} km`,                                                                                  clear: clearGeo },
   ].filter(Boolean);
+
+  const getAlreadyInGroups = (item) => {
+    if (addedMap[item.tournament.id]) return null; // just added — let card show success
+    const ids = [item.groupId, ...(item.linkedGroupIds || [])].filter(Boolean);
+    return groups.filter(g => ids.includes(g.id));
+  };
 
   const openAddModal = (tournament) => {
     setAddModal(tournament);
@@ -194,7 +252,10 @@ function TournamentSearch({ user, onLogout }) {
       <div className="app-header">
         <div className="header-inner">
           <div className="header-row">
-            <div className="header-title">Explorer</div>
+            <div>
+              <div className="header-title">Explorer</div>
+              <div className="header-subtitle">Trouve ton tournoi et ajoute le à ton groupe</div>
+            </div>
             <AvatarMenu user={user} onLogout={onLogout} />
           </div>
         </div>
@@ -205,24 +266,27 @@ function TournamentSearch({ user, onLogout }) {
         <div className="filter-bar-row">
           <div className="search-input-wrapper" style={{ flex: 1 }}>
             <span style={{ fontSize: 16, color: 'var(--primary)', flexShrink: 0 }}>🔍</span>
-            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Nom, lieu, club…" />
+            <input value={query} onChange={e => setQuery(e.target.value)}
+              placeholder={searchMode === 'membres' ? 'Rechercher un joueur par nom…' : 'Nom, lieu, club…'} />
             {query && <button className="search-clear" onClick={() => setQuery('')}>✕</button>}
           </div>
-          <button
-            className={`filter-pill${activeCount > 0 ? ' filter-pill-active' : ''}`}
-            onClick={() => setFiltersOpen(v => !v)}
-            aria-label="Ouvrir les filtres"
-          >
-            <svg width="15" height="11" viewBox="0 0 15 11" fill="none" aria-hidden="true">
-              <path d="M1 1.5h13M3.5 5.5h8M6 9.5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-            <span>Filtres</span>
-            {activeCount > 0 && <span className="filter-pill-badge">{activeCount}</span>}
-          </button>
+          {searchMode === 'tournois' && (
+            <button
+              className={`filter-pill${activeCount > 0 ? ' filter-pill-active' : ''}`}
+              onClick={() => setFiltersOpen(v => !v)}
+              aria-label="Ouvrir les filtres"
+            >
+              <svg width="15" height="11" viewBox="0 0 15 11" fill="none" aria-hidden="true">
+                <path d="M1 1.5h13M3.5 5.5h8M6 9.5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              <span>Filtres</span>
+              {activeCount > 0 && <span className="filter-pill-badge">{activeCount}</span>}
+            </button>
+          )}
         </div>
 
-        {/* Chips des filtres actifs */}
-        {activeChips.length > 0 && (
+        {/* Chips des filtres actifs — tournois uniquement */}
+        {searchMode === 'tournois' && activeChips.length > 0 && (
           <div className="active-chips-row">
             {activeChips.map(chip => (
               <div key={chip.key} className="active-chip">
@@ -235,28 +299,53 @@ function TournamentSearch({ user, onLogout }) {
         )}
       </div>
 
-      <div className="page-content" style={{ paddingTop: 8 }}>
-        {!hasSearched && !loading && recentSearches.length > 0 && (
-          <div className="recent-searches">
-            <div className="recent-searches-title">Recherches récentes</div>
-            {recentSearches.map(s => (
-              <div key={s} className="recent-search-item" onClick={() => setQuery(s)}>
-                <span className="recent-search-icon">🕐</span>
-                <span>{s}</span>
+      <div className="page-content">
+        {/* Toggle mode Tournois / Membres */}
+        <div style={{ display: 'flex', background: '#EEF2FB', borderRadius: 24, padding: 3, marginBottom: 12, gap: 0 }}>
+          {[['tournois', 'Tournois'], ['membres', 'Membres']].map(([m, lbl]) => (
+            <button key={m} onClick={() => { setSearchMode(m); setQuery(''); }}
+              style={{ flex: 1, padding: '8px 0', borderRadius: 21, fontSize: 13, fontWeight: 700, border: 'none',
+                cursor: 'pointer', background: searchMode === m ? 'var(--primary)' : 'transparent',
+                color: searchMode === m ? 'white' : 'var(--sub)', transition: 'all 150ms' }}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        {/* Résultats membres */}
+        {searchMode === 'membres' && (
+          <>
+            {memberLoading && <p style={{ textAlign: 'center', color: '#90A0B0', padding: '2rem' }}>Recherche…</p>}
+            {!memberLoading && query.length < 2 && (
+              <div className="empty-state" style={{ padding: '40px 20px' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#445', marginBottom: 6 }}>Trouver un joueur</p>
+                <p style={{ fontSize: 13, color: '#B0C0D0' }}>Tape au moins 2 lettres pour rechercher par nom.</p>
               </div>
+            )}
+            {!memberLoading && query.length >= 2 && memberResults.length === 0 && (
+              <div className="empty-state" style={{ padding: '30px 0' }}>
+                <div className="empty-icon">🔍</div>
+                <p className="empty-text">Aucun joueur trouvé</p>
+              </div>
+            )}
+            {memberResults.map(m => (
+              <MemberCard key={m.id} member={m} onInvite={setInviteModal} />
             ))}
-          </div>
+          </>
         )}
 
-        {!hasSearched && !loading && recentSearches.length === 0 && (
-          <div className="empty-state" style={{ padding: '40px 20px' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🏐</div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: '#445', marginBottom: 6 }}>Trouvez un tournoi</p>
-            <p style={{ fontSize: 13, color: '#B0C0D0' }}>Recherchez par nom, lieu ou activez votre position.</p>
-          </div>
-        )}
-
-        {loading && <p style={{ textAlign: 'center', color: '#90A0B0', padding: '2rem' }}>Recherche…</p>}
+        {/* Résultats tournois */}
+        {searchMode === 'tournois' && (
+          <>
+            {!hasSearched && !loading && (
+              <div className="empty-state" style={{ padding: '40px 20px' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🏐</div>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#445', marginBottom: 6 }}>Trouvez un tournoi</p>
+                <p style={{ fontSize: 13, color: '#B0C0D0' }}>Recherchez par nom, lieu ou activez votre position.</p>
+              </div>
+            )}
+            {loading && <p style={{ textAlign: 'center', color: '#90A0B0', padding: '2rem' }}>Recherche…</p>}
 
         {error && (
           <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
@@ -266,22 +355,18 @@ function TournamentSearch({ user, onLogout }) {
         )}
 
         {!loading && !error && hasSearched && (() => {
-          // Exclure les tournois déjà dans un groupe de l'utilisateur
-          const publicResults = results.filter(item => !item.groupName);
-
-          // Grouper par période
           const grouped = DATE_GROUPS
-            .map(g => ({ ...g, items: publicResults.filter(item => getDateGroup(item.tournament.date) === g.key) }))
+            .map(g => ({ ...g, items: results.filter(item => getDateGroup(item.tournament.date) === g.key) }))
             .filter(g => g.items.length > 0);
 
           return (
             <>
               <div style={{ padding: '4px 4px 8px', fontSize: 12, color: '#90A0B0', fontWeight: 600 }}>
-                {publicResults.length} résultat{publicResults.length !== 1 ? 's' : ''}
+                {results.length} résultat{results.length !== 1 ? 's' : ''}
                 {userLat && ` · dans un rayon de ${radius} km`}
               </div>
 
-              {publicResults.length === 0 && (
+              {results.length === 0 && (
                 <div className="empty-state" style={{ padding: '30px 0' }}>
                   <div className="empty-icon">🔍</div>
                   <p className="empty-text">Aucun tournoi trouvé</p>
@@ -297,18 +382,25 @@ function TournamentSearch({ user, onLogout }) {
                     <span className="date-group-count">{group.items.length}</span>
                     <div className="date-group-line" />
                   </div>
-                  {group.items.map(item => (
-                    <TournamentCard key={item.tournament.id}
-                      tournament={item.tournament}
-                      teamCount={item.teamCount}
-                      onAddToGroup={addedMap[item.tournament.id] ? null : openAddModal}
-                    />
-                  ))}
+                  {group.items.map(item => {
+                    const alreadyIn = getAlreadyInGroups(item);
+                    const isAlready = alreadyIn && alreadyIn.length > 0;
+                    return (
+                      <TournamentCard key={item.tournament.id}
+                        tournament={item.tournament}
+                        teamCount={item.teamCount}
+                        onAddToGroup={isAlready || addedMap[item.tournament.id] ? null : openAddModal}
+                        alreadyInGroups={isAlready ? alreadyIn.map(g => g.name) : null}
+                      />
+                    );
+                  })}
                 </div>
               ))}
             </>
           );
         })()}
+          </>
+        )}
       </div>
 
       {/* Tiroir de filtres (bottom sheet) */}
@@ -356,12 +448,17 @@ function TournamentSearch({ user, onLogout }) {
             <div className="filter-drawer-section">
               <div className="filter-drawer-label">Localisation</div>
               {!userLat ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button className="seg-btn" onClick={handleGeolocate} disabled={geoLoading}
-                    style={{ flex: 'none', padding: '7px 14px' }}>
-                    {geoLoading ? '⏳ Localisation…' : '📍 Ma position'}
-                  </button>
-                  {geoError && <span style={{ fontSize: 11, color: '#E53935' }}>{geoError}</span>}
+                <div>
+                  <p style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 8, lineHeight: 1.4 }}>
+                    Active l'accès à ta position pour trouver les tournois autour de chez toi
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button className="seg-btn" onClick={handleGeolocate} disabled={geoLoading}
+                      style={{ flex: 'none', padding: '7px 14px' }}>
+                      {geoLoading ? '⏳ Localisation…' : '📍 Activer ma position'}
+                    </button>
+                    {geoError && <span style={{ fontSize: 11, color: '#E53935' }}>{geoError}</span>}
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -388,6 +485,56 @@ function TournamentSearch({ user, onLogout }) {
               </button>
             )}
             <div className="filter-drawer-handle" />
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Inviter un membre dans un groupe */}
+      {inviteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setInviteModal(null)}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 36px', width: '100%', maxHeight: '70vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, background: '#D0D8E8', borderRadius: 4, margin: '0 auto 20px' }} />
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#1A2440', marginBottom: 4 }}>
+                Inviter {inviteModal.firstName}
+              </div>
+              <div style={{ fontSize: 13, color: '#90A0B0' }}>
+                Partage un lien d'invitation pour un de tes groupes
+              </div>
+            </div>
+            {groups.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#90A0B0', textAlign: 'center', padding: '12px 0' }}>
+                Vous n'avez pas encore de groupe.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {groups.map(g => {
+                  const link = `${window.location.origin}/rejoindre/${g.inviteCode}`;
+                  return (
+                    <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, border: '1.5px solid var(--border)', background: '#FAFBFF' }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: groupColor(g.id), flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{g.name}</div>
+                        <div style={{ fontSize: 11, color: '#90A0B0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link}</div>
+                      </div>
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(link).then(() => {
+                          setToast('Lien copié !');
+                          setTimeout(() => setToast(null), 2500);
+                          setInviteModal(null);
+                        });
+                      }}
+                        style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 12, fontSize: 12, fontWeight: 700,
+                          border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>
+                        Copier
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
