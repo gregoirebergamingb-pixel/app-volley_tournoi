@@ -256,7 +256,7 @@ app.get('/api/auth/profile', verifyToken, async (req, res) => {
     const userDoc = await db.collection('users').doc(req.userId).get();
     if (!userDoc.exists) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     const u = userDoc.data();
-    res.json({ id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, gender: u.gender, level: u.level, phone: u.phone, avatarUrl: u.avatarUrl || null, position: u.position || null });
+    res.json({ id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, gender: u.gender, level: u.level, phone: u.phone, avatarUrl: u.avatarUrl || null, position: u.position || null, chatPreference: u.chatPreference || 'group_only' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -265,7 +265,7 @@ app.get('/api/auth/profile', verifyToken, async (req, res) => {
 // Mise à jour du profil
 app.put('/api/auth/profile', verifyToken, async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, gender, level, avatarUrl, currentPassword, newPassword, position } = req.body;
+    const { firstName, lastName, phone, email, gender, level, avatarUrl, currentPassword, newPassword, position, chatPreference } = req.body;
 
     if (!firstName || !lastName || !email || !gender || !level) {
       return res.status(400).json({ error: 'Prénom, nom, email, genre et niveau sont requis' });
@@ -294,6 +294,7 @@ app.put('/api/auth/profile', verifyToken, async (req, res) => {
       gender,
       level,
       position: ['passeur','attaquant'].includes(position) ? position : null,
+      chatPreference: ['all','group_only','none'].includes(chatPreference) ? chatPreference : 'group_only',
     };
 
     if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl || null;
@@ -736,21 +737,29 @@ app.get('/api/tournaments/similar', verifyToken, async (req, res) => {
 // Créer un tournoi
 app.post('/api/tournaments', verifyToken, async (req, res) => {
   try {
-    const { groupId, name, date, time, location, price, playerFormat, gender, surface, lat, lng, externalUrl } = req.body;
+    const { groupId, name, date, time, location, price, playerFormat, playerFormats, gender, genders, surface, lat, lng, externalUrl } = req.body;
 
     if (!groupId || !name || !date || !location) {
       return res.status(400).json({ error: 'Informations incomplètes (groupId, name, date, location requis)' });
     }
 
-    const validFormats = ['2x2', '3x3', '4x4', '6x6'];
-    const validGenders = ['mix', 'masculin', 'feminin'];
+    const validFormats  = ['2x2', '3x3', '4x4', '6x6'];
+    const validGenders  = ['mix', 'masculin', 'feminin'];
     const validSurfaces = ['green', 'beach', 'gymnase'];
 
-    if (!playerFormat || !validFormats.includes(playerFormat)) {
-      return res.status(400).json({ error: 'Format invalide (2x2, 3x3, 4x4 ou 6x6)' });
+    // Accept array (new) or single string (old wizard / CreateTournament)
+    const resolvedFormats = Array.isArray(playerFormats) && playerFormats.length > 0
+      ? playerFormats.filter(f => validFormats.includes(f))
+      : (playerFormat && validFormats.includes(playerFormat) ? [playerFormat] : []);
+    const resolvedGenders = Array.isArray(genders) && genders.length > 0
+      ? genders.filter(g => validGenders.includes(g))
+      : (gender && validGenders.includes(gender) ? [gender] : []);
+
+    if (resolvedFormats.length === 0) {
+      return res.status(400).json({ error: 'Au moins un format valide requis (2x2, 3x3, 4x4, 6x6)' });
     }
-    if (!gender || !validGenders.includes(gender)) {
-      return res.status(400).json({ error: 'Genre invalide (mix, masculin ou feminin)' });
+    if (resolvedGenders.length === 0) {
+      return res.status(400).json({ error: 'Au moins une catégorie valide requise (mix, masculin, feminin)' });
     }
 
     const group = await db.collection('groups').doc(groupId).get();
@@ -758,7 +767,8 @@ app.post('/api/tournaments', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Accès non autorisé' });
     }
 
-    const teamSize = parseInt(playerFormat.split('x')[0]); // 2, 3 ou 4
+    const firstFormat = resolvedFormats[0];
+    const teamSize = parseInt(firstFormat.split('x')[0]);
     const tournamentId = db.collection('tournaments').doc().id;
 
     await db.collection('tournaments').doc(tournamentId).set({
@@ -766,7 +776,10 @@ app.post('/api/tournaments', verifyToken, async (req, res) => {
       time: time || '10:00', location,
       lat: lat ? parseFloat(lat) : null,
       lng: lng ? parseFloat(lng) : null,
-      price: price || 0, playerFormat, gender, teamSize,
+      price: price || 0,
+      playerFormat: firstFormat, playerFormats: resolvedFormats,
+      gender: resolvedGenders[0], genders: resolvedGenders,
+      teamSize,
       surface: validSurfaces.includes(surface) ? surface : null,
       externalUrl: externalUrl || null,
       creator: req.userId, createdAt: new Date()
@@ -816,18 +829,33 @@ app.get('/api/tournaments/:tournamentId', verifyToken, async (req, res) => {
 // Modifier un tournoi (créateur seulement — nom, date, heure, lieu, prix)
 app.put('/api/tournaments/:tournamentId', verifyToken, async (req, res) => {
   try {
-    const { name, date, time, location, price, playerFormat, gender, surface } = req.body;
+    const { name, date, time, location, price, playerFormat, playerFormats, gender, genders, surface } = req.body;
     const tDoc = await db.collection('tournaments').doc(req.params.tournamentId).get();
     if (!tDoc.exists) return res.status(404).json({ error: 'Tournoi non trouvé' });
     if (tDoc.data().creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut modifier le tournoi' });
     if (!name || !date || !time || !location) return res.status(400).json({ error: 'Informations incomplètes' });
-    await tDoc.ref.update({
+    const validFormats = ['2x2','3x3','4x4','6x6'];
+    const validGenders = ['mix','masculin','feminin'];
+    const resolvedFormats = Array.isArray(playerFormats) && playerFormats.length > 0
+      ? playerFormats.filter(f => validFormats.includes(f))
+      : (playerFormat && validFormats.includes(playerFormat) ? [playerFormat] : null);
+    const resolvedGenders = Array.isArray(genders) && genders.length > 0
+      ? genders.filter(g => validGenders.includes(g))
+      : (gender && validGenders.includes(gender) ? [gender] : null);
+    const updateData = {
       name: name.trim(), date, time, location: location.trim(),
       price: parseFloat(price) || 0,
-      ...(playerFormat && { playerFormat }),
-      ...(gender      && { gender }),
       surface: surface || null,
-    });
+    };
+    if (resolvedFormats && resolvedFormats.length > 0) {
+      updateData.playerFormats = resolvedFormats;
+      updateData.playerFormat  = resolvedFormats[0];
+    }
+    if (resolvedGenders && resolvedGenders.length > 0) {
+      updateData.genders = resolvedGenders;
+      updateData.gender  = resolvedGenders[0];
+    }
+    await tDoc.ref.update(updateData);
     res.json({ message: 'Tournoi modifié' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
@@ -900,7 +928,7 @@ app.post('/api/tournaments/:tournamentId/add-to-group', verifyToken, async (req,
 // Créer une équipe dans un tournoi
 app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) => {
   try {
-    const { name, externalMembers = [], visibility = 'open' } = req.body;
+    const { name, externalMembers = [], visibility = 'open', playerFormat: teamPlayerFormat, gender: teamGender } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Le nom de l'équipe est requis" });
     }
@@ -924,12 +952,21 @@ app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) =
     const userDoc = await db.collection('users').doc(req.userId).get();
     const userData = userDoc.data();
 
-    const resolvedTeamSize = tournamentData.teamSize
-      || parseInt((tournamentData.playerFormat || '').split('x')[0])
-      || 4;
+    // Use team's chosen format if provided, else fall back to tournament's first format
+    const availableFormats = tournamentData.playerFormats || (tournamentData.playerFormat ? [tournamentData.playerFormat] : []);
+    const chosenFormat = (teamPlayerFormat && availableFormats.includes(teamPlayerFormat))
+      ? teamPlayerFormat
+      : (availableFormats[0] || tournamentData.playerFormat || '');
+    const resolvedTeamSize = chosenFormat ? parseInt(chosenFormat.split('x')[0]) : (tournamentData.teamSize || 4);
+
+    // Use team's chosen gender for eligibility (e.g. mixed tournament → team-level gender)
+    const availableGenders = tournamentData.genders || (tournamentData.gender ? [tournamentData.gender] : []);
+    const chosenGender = (teamGender && availableGenders.includes(teamGender))
+      ? teamGender
+      : (availableGenders[0] || tournamentData.gender || 'mix');
 
     // Vérifier l'éligibilité genre (créateur = premier membre, équipe de taille 1)
-    const eligibility = checkGenderEligibility(userData.gender, tournamentData.gender, [], resolvedTeamSize);
+    const eligibility = checkGenderEligibility(userData.gender, chosenGender, [], resolvedTeamSize);
     if (!eligibility.allowed) {
       return res.status(400).json({ error: eligibility.reason });
     }
@@ -944,18 +981,37 @@ app.post('/api/tournaments/:tournamentId/teams', verifyToken, async (req, res) =
       name: (e.name || '').trim(),
       reservedBy: req.userId
     }));
-    await teamRef.set({
-      id: teamRef.id,
-      tournamentId: req.params.tournamentId,
-      name: name.trim(),
-      creator: req.userId,
-      members: [req.userId],
-      memberDetails: newMemberDetails,
-      externalMembers: extSlots,
-      maxSize: resolvedTeamSize,
-      averageLevel, averageLevelLabel,
-      visibility: ['open', 'group_only'].includes(visibility) ? visibility : 'open'
-    });
+    const now = new Date();
+    const convRef = db.collection('conversations').doc();
+    await Promise.all([
+      teamRef.set({
+        id: teamRef.id,
+        tournamentId: req.params.tournamentId,
+        name: name.trim(),
+        creator: req.userId,
+        members: [req.userId],
+        memberDetails: newMemberDetails,
+        externalMembers: extSlots,
+        maxSize: resolvedTeamSize,
+        playerFormat: chosenFormat,
+        gender: chosenGender,
+        averageLevel, averageLevelLabel,
+        visibility: ['open', 'group_only'].includes(visibility) ? visibility : 'open',
+        conversationId: convRef.id,
+      }),
+      convRef.set({
+        type: 'team',
+        teamId: teamRef.id,
+        tournamentId: req.params.tournamentId,
+        teamName: name.trim(),
+        tournamentName: tournamentData.name || '',
+        participants: [req.userId],
+        unreadCounts: { [req.userId]: 0 },
+        lastMessage: null,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    ]);
 
     res.json({ message: 'Équipe créée!', teamId: teamRef.id });
   } catch (error) {
@@ -1042,12 +1098,16 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/join', verifyToken, async
       reservedBy: req.userId
     }));
 
-    await teamRef.update({
+    const joinOps = [teamRef.update({
       members: [...teamData.members, req.userId],
       memberDetails: updatedDetails,
       externalMembers: [...currentExternals, ...newExtSlots],
       averageLevel, averageLevelLabel
-    });
+    })];
+    if (teamData.conversationId) {
+      joinOps.push(db.collection('conversations').doc(teamData.conversationId).update({ participants: admin.firestore.FieldValue.arrayUnion(req.userId), [`unreadCounts.${req.userId}`]: 0 }));
+    }
+    await Promise.all(joinOps);
 
     res.json({ message: "Vous avez rejoint l'équipe!" });
   } catch (error) {
@@ -1075,12 +1135,18 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/leave', verifyToken, asyn
 
     // Si l'équipe est vide après le départ, on la supprime
     if (updatedMembers.length === 0) {
-      await teamRef.delete();
+      const ops = [teamRef.delete()];
+      if (teamData.conversationId) ops.push(db.collection('conversations').doc(teamData.conversationId).delete());
+      await Promise.all(ops);
       return res.json({ message: "Équipe supprimée (plus aucun membre)" });
     }
 
     const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
-    await teamRef.update({ members: updatedMembers, memberDetails: updatedDetails, externalMembers: updatedExternals, averageLevel, averageLevelLabel });
+    const updates = [teamRef.update({ members: updatedMembers, memberDetails: updatedDetails, externalMembers: updatedExternals, averageLevel, averageLevelLabel })];
+    if (teamData.conversationId) {
+      updates.push(db.collection('conversations').doc(teamData.conversationId).update({ participants: admin.firestore.FieldValue.arrayRemove(req.userId) }));
+    }
+    await Promise.all(updates);
     res.json({ message: "Vous avez quitté l'équipe" });
   } catch (error) {
     console.error('Erreur quitter équipe:', error);
@@ -1129,6 +1195,54 @@ app.put('/api/tournaments/:tournamentId/teams/:teamId', verifyToken, async (req,
   }
 });
 
+// Créer ou récupérer la conversation d'une équipe (on-demand)
+app.post('/api/tournaments/:tournamentId/teams/:teamId/conversation', verifyToken, async (req, res) => {
+  try {
+    const teamRef = db.collection('tournaments').doc(req.params.tournamentId)
+      .collection('teams').doc(req.params.teamId);
+    const [teamDoc, tournDoc] = await Promise.all([
+      teamRef.get(),
+      db.collection('tournaments').doc(req.params.tournamentId).get()
+    ]);
+    if (!teamDoc.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
+    if (!teamDoc.data().members.includes(req.userId)) return res.status(403).json({ error: 'Non autorisé' });
+
+    const teamData = teamDoc.data();
+
+    // Already has a conversation
+    if (teamData.conversationId) {
+      return res.json({ id: teamData.conversationId });
+    }
+
+    // Create one with all current members
+    const tournamentData = tournDoc.exists ? tournDoc.data() : {};
+    const now = new Date();
+    const unreadCounts = {};
+    teamData.members.forEach(id => { unreadCounts[id] = 0; });
+    const convRef = db.collection('conversations').doc();
+    await Promise.all([
+      convRef.set({
+        type: 'team',
+        teamId: req.params.teamId,
+        tournamentId: req.params.tournamentId,
+        teamName: teamData.name || '',
+        tournamentName: tournamentData.name || '',
+        participants: [...teamData.members],
+        unreadCounts,
+        lastMessage: null,
+        createdAt: now,
+        updatedAt: now,
+      }),
+      teamRef.update({ conversationId: convRef.id }),
+    ]);
+
+    res.json({ id: convRef.id });
+  } catch (error) {
+    console.error('Erreur conversation équipe:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Ajouter un membre directement (créateur seulement)
 app.post('/api/tournaments/:tournamentId/teams/:teamId/add-member', verifyToken, async (req, res) => {
   try {
@@ -1164,7 +1278,12 @@ app.post('/api/tournaments/:tournamentId/teams/:teamId/add-member', verifyToken,
 
     const updatedDetails = [...teamData.memberDetails, { id: targetId, firstName: userData.firstName, lastName: userData.lastName, gender: userData.gender, level: userData.level, avatarUrl: userData.avatarUrl || null }];
     const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
-    await teamRef.update({ members: [...teamData.members, targetId], memberDetails: updatedDetails, averageLevel, averageLevelLabel });
+    const updates = [teamRef.update({ members: [...teamData.members, targetId], memberDetails: updatedDetails, averageLevel, averageLevelLabel })];
+    if (teamData.conversationId) {
+      const convRef = db.collection('conversations').doc(teamData.conversationId);
+      updates.push(convRef.update({ participants: admin.firestore.FieldValue.arrayUnion(targetId), [`unreadCounts.${targetId}`]: 0 }));
+    }
+    await Promise.all(updates);
     res.json({ message: 'Membre ajouté' });
   } catch (error) {
     console.error('Erreur add-member:', error);
@@ -1214,7 +1333,11 @@ app.delete('/api/tournaments/:tournamentId/teams/:teamId/members/:userId', verif
     const updatedMembers = teamData.members.filter(id => id !== req.params.userId);
     const updatedDetails = (teamData.memberDetails || []).filter(m => m.id !== req.params.userId);
     const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
-    await teamRef.update({ members: updatedMembers, memberDetails: updatedDetails, averageLevel, averageLevelLabel });
+    const updates = [teamRef.update({ members: updatedMembers, memberDetails: updatedDetails, averageLevel, averageLevelLabel })];
+    if (teamData.conversationId) {
+      updates.push(db.collection('conversations').doc(teamData.conversationId).update({ participants: admin.firestore.FieldValue.arrayRemove(req.params.userId) }));
+    }
+    await Promise.all(updates);
     res.json({ message: 'Membre retiré' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
@@ -1255,8 +1378,11 @@ app.delete('/api/tournaments/:tournamentId/teams/:teamId', verifyToken, async (r
     const teamRef = db.collection('tournaments').doc(req.params.tournamentId).collection('teams').doc(req.params.teamId);
     const team = await teamRef.get();
     if (!team.exists) return res.status(404).json({ error: 'Équipe non trouvée' });
-    if (team.data().creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut supprimer l\'équipe' });
-    await teamRef.delete();
+    const teamData = team.data();
+    if (teamData.creator !== req.userId) return res.status(403).json({ error: 'Seul le créateur peut supprimer l\'équipe' });
+    const ops = [teamRef.delete()];
+    if (teamData.conversationId) ops.push(db.collection('conversations').doc(teamData.conversationId).delete());
+    await Promise.all(ops);
     res.json({ message: 'Équipe supprimée' });
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
@@ -1336,10 +1462,19 @@ app.get('/api/users/:userId/profile', verifyToken, async (req, res) => {
       });
     }
 
+    // Check if requester shares a group with target
+    let isGroupMember = false;
+    if (req.userId !== targetId) {
+      const myGroupsSnap = await db.collection('groups').where('members', 'array-contains', req.userId).get();
+      isGroupMember = myGroupsSnap.docs.some(doc => (doc.data().members || []).includes(targetId));
+    }
+
     history.sort((a, b) => b.date.localeCompare(a.date));
     res.json({
       id: u.id, firstName: u.firstName, lastName: u.lastName,
       avatarUrl: u.avatarUrl || null, level: u.level, gender: u.gender, position: u.position || null,
+      chatPreference: u.chatPreference || 'group_only',
+      isGroupMember,
       stats, formatStats, surfaceStats,
       history: history.slice(0, 10), partners,
     });
@@ -1508,8 +1643,14 @@ app.post('/api/notifications/:notifId/approve', verifyToken, async (req, res) =>
     const { averageLevel, averageLevelLabel } = computeAverageLevel(updatedDetails);
     const updatedRequests = (teamData.joinRequests || []).filter(r => r.userId !== fromUserId);
 
-    await teamRef.update({ members: [...teamData.members, fromUserId], memberDetails: updatedDetails, averageLevel, averageLevelLabel, joinRequests: updatedRequests });
-    await notifRef.update({ status: 'approved' });
+    const ops = [
+      teamRef.update({ members: [...teamData.members, fromUserId], memberDetails: updatedDetails, averageLevel, averageLevelLabel, joinRequests: updatedRequests }),
+      notifRef.update({ status: 'approved' }),
+    ];
+    if (teamData.conversationId) {
+      ops.push(db.collection('conversations').doc(teamData.conversationId).update({ participants: admin.firestore.FieldValue.arrayUnion(fromUserId), [`unreadCounts.${fromUserId}`]: 0 }));
+    }
+    await Promise.all(ops);
     res.json({ message: 'Demande approuvée' });
   } catch (error) {
     console.error('Erreur approve:', error);
@@ -1540,6 +1681,163 @@ app.post('/api/notifications/:notifId/deny', verifyToken, async (req, res) => {
     console.error('Erreur deny:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
+});
+
+// ============================================
+// MESSAGERIE PRIVÉE
+// ============================================
+
+// Nombre de messages non lus
+app.get('/api/messages/unread-count', verifyToken, async (req, res) => {
+  try {
+    const snap = await db.collection('conversations')
+      .where('participants', 'array-contains', req.userId).get();
+    let count = 0;
+    snap.forEach(doc => { count += (doc.data().unreadCounts?.[req.userId] || 0); });
+    res.json({ count });
+  } catch { res.status(500).json({ error: 'Erreur serveur' }); }
+});
+
+// Liste des conversations
+app.get('/api/messages/conversations', verifyToken, async (req, res) => {
+  try {
+    const snap = await db.collection('conversations')
+      .where('participants', 'array-contains', req.userId).get();
+    const convs = snap.docs.map(doc => {
+      const d = doc.data();
+      const lastMsg = d.lastMessage ? {
+        ...d.lastMessage,
+        timestamp: d.lastMessage.timestamp?.toDate?.()?.toISOString() || null,
+      } : null;
+      const unread = d.unreadCounts?.[req.userId] || 0;
+      const updatedAt = d.updatedAt?.toDate?.()?.toISOString() || null;
+      if (d.type === 'team') {
+        return { id: doc.id, type: 'team', teamName: d.teamName || null, tournamentName: d.tournamentName || null, lastMessage: lastMsg, unread, updatedAt };
+      }
+      const otherId = d.participants.find(p => p !== req.userId);
+      return {
+        id: doc.id,
+        otherUser: d.participantDetails?.[otherId] || null,
+        lastMessage: lastMsg,
+        unread, updatedAt,
+      };
+    });
+    convs.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+    res.json(convs);
+  } catch { res.status(500).json({ error: 'Erreur serveur' }); }
+});
+
+// Créer ou récupérer une conversation existante
+app.post('/api/messages/conversations', verifyToken, async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    if (!targetUserId) return res.status(400).json({ error: 'targetUserId requis' });
+    if (targetUserId === req.userId) return res.status(400).json({ error: 'Impossible' });
+
+    // Conversation existante ?
+    const existing = await db.collection('conversations')
+      .where('participants', 'array-contains', req.userId).get();
+    const found = existing.docs.find(doc => doc.data().participants.includes(targetUserId));
+    if (found) return res.json({ id: found.id });
+
+    const [myDoc, targetDoc] = await Promise.all([
+      db.collection('users').doc(req.userId).get(),
+      db.collection('users').doc(targetUserId).get(),
+    ]);
+    if (!targetDoc.exists) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+    const targetUser = targetDoc.data();
+    const chatPref = targetUser.chatPreference || 'group_only';
+    if (chatPref === 'none') return res.status(403).json({ error: "Cet utilisateur n'accepte pas les messages" });
+    if (chatPref === 'group_only') {
+      const groupSnap = await db.collection('groups').where('members', 'array-contains', req.userId).get();
+      const shared = groupSnap.docs.some(doc => (doc.data().members || []).includes(targetUserId));
+      if (!shared) return res.status(403).json({ error: "Cet utilisateur n'accepte les messages que de ses groupes" });
+    }
+
+    const me = myDoc.data();
+    const now = new Date();
+    const ref = await db.collection('conversations').add({
+      participants: [req.userId, targetUserId],
+      participantDetails: {
+        [req.userId]:    { id: req.userId,    firstName: me.firstName,         lastName: me.lastName,         avatarUrl: me.avatarUrl || null },
+        [targetUserId]: { id: targetUserId,  firstName: targetUser.firstName, lastName: targetUser.lastName, avatarUrl: targetUser.avatarUrl || null },
+      },
+      lastMessage: null,
+      unreadCounts: { [req.userId]: 0, [targetUserId]: 0 },
+      createdAt: now, updatedAt: now,
+    });
+    res.json({ id: ref.id });
+  } catch (error) {
+    console.error('Error conversation:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Messages d'une conversation
+app.get('/api/messages/conversations/:convId', verifyToken, async (req, res) => {
+  try {
+    const convDoc = await db.collection('conversations').doc(req.params.convId).get();
+    if (!convDoc.exists) return res.status(404).json({ error: 'Conversation non trouvée' });
+    const conv = convDoc.data();
+    if (!conv.participants.includes(req.userId)) return res.status(403).json({ error: 'Accès non autorisé' });
+
+    const msgsSnap = await db.collection('conversations').doc(req.params.convId)
+      .collection('messages').orderBy('timestamp', 'asc').get();
+
+    const messages = msgsSnap.docs.map(doc => ({
+      id: doc.id, senderId: doc.data().senderId, text: doc.data().text,
+      timestamp: doc.data().timestamp?.toDate?.()?.toISOString() || new Date().toISOString(),
+    }));
+
+    if (conv.type === 'team') {
+      res.json({ id: convDoc.id, type: 'team', teamName: conv.teamName || null, tournamentName: conv.tournamentName || null, otherUser: null, messages });
+    } else {
+      const otherId = conv.participants.find(p => p !== req.userId);
+      res.json({ id: convDoc.id, type: 'direct', otherUser: conv.participantDetails?.[otherId] || null, messages });
+    }
+  } catch { res.status(500).json({ error: 'Erreur serveur' }); }
+});
+
+// Envoyer un message
+app.post('/api/messages/conversations/:convId/send', verifyToken, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text?.trim()) return res.status(400).json({ error: 'Message vide' });
+
+    const convDoc = await db.collection('conversations').doc(req.params.convId).get();
+    if (!convDoc.exists) return res.status(404).json({ error: 'Non trouvé' });
+    const conv = convDoc.data();
+    if (!conv.participants.includes(req.userId)) return res.status(403).json({ error: 'Accès non autorisé' });
+
+    const now = new Date();
+    const msgRef = await db.collection('conversations').doc(req.params.convId)
+      .collection('messages').add({ senderId: req.userId, text: text.trim(), timestamp: now });
+
+    const unreadUpdate = {};
+    for (const p of conv.participants) {
+      if (p !== req.userId) unreadUpdate[`unreadCounts.${p}`] = (conv.unreadCounts?.[p] || 0) + 1;
+    }
+    await db.collection('conversations').doc(req.params.convId).update({
+      lastMessage: { text: text.trim(), senderId: req.userId, timestamp: now },
+      updatedAt: now,
+      ...unreadUpdate,
+    });
+
+    res.json({ id: msgRef.id, senderId: req.userId, text: text.trim(), timestamp: now.toISOString() });
+  } catch { res.status(500).json({ error: 'Erreur serveur' }); }
+});
+
+// Marquer comme lu
+app.put('/api/messages/conversations/:convId/read', verifyToken, async (req, res) => {
+  try {
+    const convDoc = await db.collection('conversations').doc(req.params.convId).get();
+    if (!convDoc.exists) return res.status(404).json({ error: 'Non trouvé' });
+    if (!convDoc.data().participants.includes(req.userId)) return res.status(403).json({ error: 'Accès non autorisé' });
+    await db.collection('conversations').doc(req.params.convId)
+      .update({ [`unreadCounts.${req.userId}`]: 0 });
+    res.json({ ok: true });
+  } catch { res.status(500).json({ error: 'Erreur serveur' }); }
 });
 
 // ============================================

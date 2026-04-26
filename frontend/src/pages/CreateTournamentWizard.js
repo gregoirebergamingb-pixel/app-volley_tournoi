@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import WarnOnce from '../components/WarnOnce';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+const WARN_MSG = "C'est une application communautaire donc les informations que vous allez ajouter dans ce tournoi seront accessibles par tout le monde. Nous vous invitons à prendre le temps de relire et vérifier vos informations. Ajouter le lien pour s'inscrire et les différents formats du tournoi facilitera le partage de ce tournoi à d'autres membres de la communauté.";
 
 const AV_COLORS = ['#1565C0','#AD1457','#2E7D32','#E65100','#6A1B9A','#00695C','#C62828','#283593'];
 function groupColor(id) {
@@ -37,8 +40,8 @@ function CreateTournamentWizard({ user }) {
   const [location, setLocation]     = useState('');
   const [locationLat, setLocationLat] = useState(null);
   const [locationLng, setLocationLng] = useState(null);
-  const [playerFormat, setPlayerFormat] = useState('');
-  const [gender, setGender]         = useState('');
+  const [playerFormats, setPlayerFormats] = useState([]);
+  const [genders, setGenders]       = useState([]);
   const [surface, setSurface]       = useState('');
   const [price, setPrice]           = useState('');
   const [externalUrl, setExternalUrl] = useState('');
@@ -94,15 +97,25 @@ function CreateTournamentWizard({ user }) {
     }, 500);
   };
 
+  const toggleFormat = (f) => {
+    setPlayerFormats(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
+    clearErr('playerFormats');
+  };
+
+  const toggleGender = (g) => {
+    setGenders(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]);
+    clearErr('genders');
+  };
+
   const validate = () => {
     const errs = {};
-    if (!groupId)           errs.groupId = true;
-    if (!name.trim())       errs.name    = true;
-    if (!date)              errs.date    = true;
-    if (!time)              errs.time    = true;
-    if (!location.trim())   errs.location = true;
-    if (!playerFormat)      errs.playerFormat = true;
-    if (!gender)            errs.gender  = true;
+    if (!groupId)               errs.groupId      = true;
+    if (!name.trim())           errs.name         = true;
+    if (!date)                  errs.date         = true;
+    if (!time)                  errs.time         = true;
+    if (!location.trim())       errs.location     = true;
+    if (playerFormats.length === 0) errs.playerFormats = true;
+    if (genders.length === 0)   errs.genders      = true;
     return errs;
   };
 
@@ -113,7 +126,10 @@ function CreateTournamentWizard({ user }) {
         `${API_URL}/api/tournaments`,
         { groupId, name: name.trim(), date, time, location: location.trim(),
           lat: locationLat, lng: locationLng,
-          price: parseFloat(price) || 0, playerFormat, gender, surface: surface || null,
+          price: parseFloat(price) || 0,
+          playerFormats, playerFormat: playerFormats[0] || '',
+          genders, gender: genders[0] || '',
+          surface: surface || null,
           externalUrl: externalUrl.trim() || null },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -134,26 +150,23 @@ function CreateTournamentWizard({ user }) {
       setError('Veuillez remplir tous les champs obligatoires.');
       return;
     }
-    // Check for duplicate tournaments
     try {
       const res = await axios.get(
         `${API_URL}/api/tournaments/similar?date=${encodeURIComponent(date)}&location=${encodeURIComponent(location.trim())}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.data.length > 0) {
-        setSimilarTournament(res.data[0]);
-        return;
-      }
-    } catch { /* ignore, proceed to create */ }
+      if (res.data.length > 0) { setSimilarTournament(res.data[0]); return; }
+    } catch { /* ignore, proceed */ }
     await doCreate();
   };
 
   const fe = (key) => fieldErrors[key] ? 'form-group field-error' : 'form-group';
   const clearErr = (key) => fieldErrors[key] && setFieldErrors(p => { const n = {...p}; delete n[key]; return n; });
 
-
   return (
     <>
+      <WarnOnce storageKey="warn_create_tournament" message={WARN_MSG} />
+
       <div className="app-header">
         <div className="header-inner">
           <div className="header-row">
@@ -235,28 +248,34 @@ function CreateTournamentWizard({ user }) {
             )}
           </div>
 
-          {/* Format */}
-          <div className={fe('playerFormat')}>
-            <label>Format <span className="required-star">*</span></label>
+          {/* Formats (multi-sélection) */}
+          <div className={fe('playerFormats')}>
+            <label>
+              Format(s) <span className="required-star">*</span>
+              <span style={{ fontSize: 11, color: '#90A0B0', fontWeight: 400, marginLeft: 6 }}>Plusieurs possibles</span>
+            </label>
             <div className="format-picker">
               {FORMATS.map(f => (
                 <button key={f} type="button"
-                  className={`format-option ${playerFormat === f ? 'selected' : ''}`}
-                  onClick={() => { setPlayerFormat(f); clearErr('playerFormat'); }}>
+                  className={`format-option ${playerFormats.includes(f) ? 'selected' : ''}`}
+                  onClick={() => toggleFormat(f)}>
                   <span className="format-option-label">{f}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Catégorie */}
-          <div className={fe('gender')}>
-            <label>Catégorie <span className="required-star">*</span></label>
+          {/* Catégories (multi-sélection) */}
+          <div className={fe('genders')}>
+            <label>
+              Catégorie(s) <span className="required-star">*</span>
+              <span style={{ fontSize: 11, color: '#90A0B0', fontWeight: 400, marginLeft: 6 }}>Plusieurs possibles</span>
+            </label>
             <div className="gender-picker">
               {GENDERS.map(g => (
                 <button key={g.value} type="button"
-                  className={`gender-option-pill ${gender === g.value ? 'selected' : ''}`}
-                  onClick={() => { setGender(g.value); clearErr('gender'); }}>
+                  className={`gender-option-pill ${genders.includes(g.value) ? 'selected' : ''}`}
+                  onClick={() => toggleGender(g.value)}>
                   {g.label}
                 </button>
               ))}
@@ -325,11 +344,11 @@ function CreateTournamentWizard({ user }) {
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <button style={{ width:'100%', padding:'13px' }}
                 onClick={() => navigate(`/tournament/${similarTournament.id}`)}>
-                ✅ Oui, c'est ce tournoi
+                Oui, c'est ce tournoi
               </button>
               <button className="button-secondary" style={{ width:'100%', padding:'13px' }}
                 onClick={() => { setSimilarTournament(null); doCreate(); }}>
-                ➕ Non, créer un autre tournoi
+                Non, créer un autre tournoi
               </button>
             </div>
           </div>

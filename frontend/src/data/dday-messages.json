@@ -11,6 +11,42 @@
         "format": []
       },
       "enabled": true
+    },
+    {
+      "id": "msg_mob7ujqw",
+      "text": "Penses à t'échauffer ! Petit vieux va !",
+      "emoji": "😏",
+      "gifUrl": "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3k3dHVjbnFiNmFsaDU0dWlqb3hqYjgxNnQ0cmpra2doMjJlcWFvMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f3tvTIbMg6sBa/giphy.gif",
+      "conditions": {
+        "surface": [],
+        "gender": [],
+        "format": []
+      },
+      "enabled": true
+    },
+    {
+      "id": "msg_mod1xyko",
+      "text": "Garde les yeux ouverts en smatchant, ça fonctionne mieux quand même !",
+      "emoji": "🔥",
+      "gifUrl": "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExOWQwZTFnbmprYnQwaGlyd2owZXdmbjFobHRsNjYwYzhhZnY1aGFzdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pg87nWVeAQ6Ag/giphy.gif",
+      "conditions": {
+        "surface": [],
+        "gender": [],
+        "format": []
+      },
+      "enabled": true
+    },
+    {
+      "id": "msg_mod20jq0",
+      "text": "Game dayyyyy ! Wooooh !",
+      "emoji": "🔥",
+      "gifUrl": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaW8yajZrb3Q5a3Zucjl5OW14ZmVvdDUyOXc2Z216eGk0cGpvamRmayZlcD12MV9naWZzX3NlYXJjaCZjdD1n/8aNesWCZDYVb2/giphy.gif",
+      "conditions": {
+        "surface": [],
+        "gender": [],
+        "format": []
+      },
+      "enabled": true
     }
   ]
 }

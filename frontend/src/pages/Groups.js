@@ -17,7 +17,7 @@ function initials(firstName, lastName) {
   return f ? f.slice(0, 2).toUpperCase() : '?';
 }
 
-function Groups({ user, onLogout }) {
+function Groups({ user, onLogout, chatUnread = 0 }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [groups, setGroups]       = useState([]);
@@ -192,7 +192,15 @@ function Groups({ user, onLogout }) {
               <div className="header-title">Mes Groupes</div>
               <div className="header-subtitle">{groups.length} groupe{groups.length !== 1 ? 's' : ''}</div>
             </div>
-            <AvatarMenu user={user} onLogout={onLogout} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button className="header-icon-btn" onClick={() => navigate('/messages')} aria-label="Messages">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                {chatUnread > 0 && <span className="header-icon-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
+              </button>
+              <AvatarMenu user={user} onLogout={onLogout} />
+            </div>
           </div>
         </div>
       </div>

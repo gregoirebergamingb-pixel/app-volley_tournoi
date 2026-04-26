@@ -144,7 +144,7 @@ function SkeletonCard() {
 
 const CACHE_KEY = 'dashboard_entries_v1';
 
-function Dashboard({ user, onLogout }) {
+function Dashboard({ user, onLogout, chatUnread = 0 }) {
   const [entries, setEntries] = useState(() => {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
@@ -236,8 +236,16 @@ function Dashboard({ user, onLogout }) {
                   : 'Vos prochains tournois'}
               </div>
             </div>
-            <AvatarMenu user={user} onLogout={onLogout} notifCount={notifCount}
-              onNotifClick={() => setShowNotifs(true)} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button className="header-icon-btn" onClick={() => navigate('/messages')} aria-label="Messages">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                {chatUnread > 0 && <span className="header-icon-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
+              </button>
+              <AvatarMenu user={user} onLogout={onLogout} notifCount={notifCount}
+                onNotifClick={() => setShowNotifs(true)} />
+            </div>
           </div>
         </div>
       </div>

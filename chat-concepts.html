@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat UI — 4 Concepts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:linear-gradient(150deg,#0D1B3E 0%,#1565C0 100%);min-height:100vh;padding:24px 16px 48px;display:flex;flex-direction:column;align-items:center;gap:20px}
+
+/* ── Concept selector ── */
+h1{color:white;font-size:18px;font-weight:800;letter-spacing:-.3px;text-align:center}
+.tagline{color:rgba(255,255,255,.55);font-size:13px;text-align:center;margin-top:4px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.tab{padding:8px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:700;transition:all 200ms;font-family:inherit}
+.tab.active{background:white;color:#1565C0;border-color:white}
+.tab:hover:not(.active){border-color:rgba(255,255,255,.5);color:white}
+
+/* ── Phone shell ── */
+.stage{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%;max-width:740px}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;flex:0 0 auto}
+.phone{width:300px;height:600px;background:#F5F8FF;border-radius:36px;overflow:hidden;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.5);border:8px solid #111;flex-shrink:0}
+
+/* ── Info panel ── */
+.info{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;width:300px;gap:8px;display:flex;flex-direction:column}
+.concept-title{font-size:14px;font-weight:800;color:white}
+.concept-desc{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5}
+.pcons{display:flex;gap:8px}
+.pro,.con{flex:1;padding:8px 10px;border-radius:8px;font-size:11px;line-height:1.4}
+.pro{background:rgba(76,175,80,.12);border-left:3px solid #4CAF50;color:rgba(255,255,255,.7)}
+.con{background:rgba(244,67,54,.1);border-left:3px solid #F44336;color:rgba(255,255,255,.7)}
+.pro strong,.con strong{display:block;margin-bottom:3px;font-size:11px}
+.pro strong{color:#81C784}.con strong{color:#FF8A65}
+
+.nav-hint{font-size:11px;color:rgba(255,255,255,.4);text-align:center}
+
+/* ── Screens ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:#F5F8FF;transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s}
+.screen.off{transform:translateX(100%);pointer-events:none}
+.screen.back{transform:translateX(-8%) scale(.97);opacity:.5;pointer-events:none}
+
+/* ── App Header ── */
+.app-header{background:#1565C0;padding:10px 14px 0;flex-shrink:0}
+.hinner{padding-top:20px;padding-bottom:12px;position:relative}
+.hrow{display:flex;justify-content:space-between;align-items:center}
+.htitle{color:white;font-size:16px;font-weight:700}
+.hsub{color:rgba(255,255,255,.65);font-size:11px;margin-top:2px}
+.hactions{display:flex;align-items:center;gap:8px}
+
+/* ── Avatar ── */
+.av{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;position:relative;flex-shrink:0}
+.av-badge,.nav-badge,.fab-badge,.hbtn-badge{position:absolute;background:#E53935;border-radius:50%;font-size:8px;font-weight:800;color:white;display:flex;align-items:center;justify-content:center}
+.av-badge{top:-3px;right:-3px;width:15px;height:15px;border:2px solid #1565C0}
+.fab-badge{top:-2px;right:-2px;width:17px;height:17px;border:2px solid white}
+
+/* ── Back btn ── */
+.back-btn{color:rgba(255,255,255,.8);font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:4px;position:absolute;top:2px;left:0}
+
+/* ── Bottom nav ── */
+.bnav{background:white;border-top:1px solid #E8EEF4;display:flex;flex-shrink:0;height:54px}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border:none;background:none;color:#788899;font-size:9px;font-weight:700;position:relative;transition:color 150ms;font-family:inherit}
+.ntab.active{color:#1565C0}
+.ntab svg{width:19px;height:19px}
+.nav-badge{top:6px;right:calc(50% - 16px);width:15px;height:15px;border:1.5px solid white;font-size:8px}
+
+/* ── FAB ── */
+.fab{position:absolute;bottom:62px;right:12px;width:46px;height:46px;border-radius:50%;background:#1565C0;color:white;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(21,101,192,.5);cursor:pointer;border:none;z-index:20}
+.fab svg{width:20px;height:20px}
+
+/* ── Page content ── */
+.pcontent{flex:1;overflow-y:auto;padding:10px 12px 0}
+.pcontent::-webkit-scrollbar{display:none}
+
+/* ── Dummy cards ── */
+.dcard{background:white;border-radius:12px;padding:12px;margin-bottom:9px;border:1px solid #E8EEF4}
+.sk{background:#EEF2FB;border-radius:6px;margin-bottom:5px}
+.slabel{font-size:10px;font-weight:700;color:#90A0B0;text-transform:uppercase;letter-spacing:.07em;margin:8px 0 6px}
+
+/* ── Hero card ── */
+.hero{background:linear-gradient(135deg,#1565C0,#1E88E5);border-radius:14px;padding:14px;margin-bottom:9px;color:white}
+.hero-lbl{font-size:9px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.hero-name{font-size:15px;font-weight:800;margin-bottom:4px}
+.hero-meta{font-size:10px;opacity:.75}
+
+/* ── Conversation list ── */
+.conv-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F0F4FF;cursor:pointer}
+.conv-item:last-child{border-bottom:none}
+.cav{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white}
+.cbody{flex:1;min-width:0}
+.cname{font-size:13px;font-weight:700;color:#1A2440}
+.cname.unread{color:#1565C0}
+.cprev{font-size:11px;color:#788899;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.cprev.unread{color:#445;font-weight:600}
+.cmeta{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ctime{font-size:10px;color:#B0C0D0}
+.cunread{width:17px;height:17px;background:#1565C0;border-radius:50%;font-size:9px;font-weight:800;color:white;display:flex;align-items:center;justify-content:center}
+
+/* ── Chat ── */
+.chat-msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.chat-msgs::-webkit-scrollbar{display:none}
+.brow{display:flex;align-items:flex-end;gap:6px}
+.brow.me{flex-direction:row-reverse}
+.bav{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white}
+.bubble{max-width:72%;padding:7px 11px;font-size:12px;line-height:1.45;border-radius:18px}
+.bubble.them{background:white;color:#1A2440;border-radius:4px 18px 18px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.bubble.me{background:#1565C0;color:white;border-radius:18px 4px 18px 18px}
+.btime{font-size:9px;color:#B0C0D0;margin-top:2px;text-align:right}
+.chat-bar{background:white;border-top:1px solid #E8EEF4;padding:8px 10px;display:flex;gap:7px;align-items:center;flex-shrink:0}
+.chat-input{flex:1;background:#F5F8FF;border:1.5px solid #E8EEF4;border-radius:20px;padding:7px 12px;font-size:12px;outline:none;font-family:inherit;color:#1A2440}
+.send-btn{width:34px;height:34px;border-radius:50%;background:#1565C0;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.send-btn svg{width:15px;height:15px}
+
+/* ── Header icon button ── */
+.hbtn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.15);cursor:pointer;position:relative;border:none;color:white}
+.hbtn svg{width:17px;height:17px}
+.hbtn-badge{top:-2px;right:-2px;width:14px;height:14px;border:2px solid #1565C0;font-size:7px}
+
+/* ── Overlay ── */
+.overlay{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.2)}
+.overlay.hidden{display:none}
+
+/* ── Slide panel ── */
+.slide-panel{position:absolute;bottom:54px;left:0;right:0;background:white;border-radius:18px 18px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.14);z-index:50;max-height:68%;overflow-y:auto}
+.slide-panel::-webkit-scrollbar{display:none}
+.panel-handle{width:32px;height:3px;background:#E0E8F0;border-radius:2px;margin:10px auto 12px}
+.panel-title{font-size:14px;font-weight:800;color:#1A2440;padding:0 14px 10px;border-bottom:1px solid #F0F4FF}
+.panel-body{padding:0 14px 14px}
+
+/* ── Avatar menu ── */
+.av-menu{position:absolute;top:50px;right:0;background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.16);min-width:180px;z-index:100;border:1px solid #E8EEF4;overflow:hidden}
+.av-menu-item{padding:10px 14px;font-size:12px;font-weight:600;color:#1A2440;display:flex;align-items:center;gap:8px;cursor:pointer}
+.av-menu-item:hover{background:#F5F8FF}
+.av-menu-sep{height:1px;background:#E8EEF4;margin:3px 0}
+.av-menu-badge{margin-left:auto;background:#E53935;color:white;border-radius:8px;font-size:9px;font-weight:800;padding:1px 5px}
+
+/* ── Filter pills (Dashboard) ── */
+.fpills{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.fpill{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:700;border:1.5px solid;cursor:pointer}
+.fpill.active{background:#1565C0;color:white;border-color:#1565C0}
+.fpill.inactive{background:white;color:#788899;border-color:#E8EEF4}
+.fadd{margin-left:auto;padding:4px 12px;border-radius:16px;font-size:11px;font-weight:700;background:#2E7D32;color:white;border:none;cursor:pointer}
+
+/* ── Pref badge ── */
+.pref-badge{display:inline-flex;align-items:center;gap:5px;background:#E8F5E9;color:#2E7D32;border-radius:8px;font-size:10px;font-weight:700;padding:3px 8px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<h1>Chat — 4 Concepts UI</h1>
+<p class="tagline">Clique sur chaque phone pour naviguer · Accès chat → Liste → Conversation</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="selectTab(0)">A · Bulle flottante</button>
+  <button class="tab" onclick="selectTab(1)">B · 3ème onglet</button>
+  <button class="tab" onclick="selectTab(2)">C · Avatar menu</button>
+  <button class="tab" onclick="selectTab(3)">D · Icône header</button>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<script>
+const CONCEPTS = [
+  {
+    id:'A',
+    title:'A — Bulle flottante (FAB)',
+    desc:'Un bouton rond fixe en bas à droite, au-dessus de la nav. Badge avec le nombre de messages non lus. Clic → panel slide-up avec les conversations.',
+    pro:'Non intrusif, toujours visible, pattern familier (WhatsApp, Messenger)',
+    con:'Cache du contenu, position proche des onglets → risque de clic accidentel',
+    screens: buildA
+  },
+  {
+    id:'B',
+    title:'B — 3ème onglet navigation',
+    desc:'Messages devient un onglet à part entière dans la barre de navigation. Accès direct, badge sur l\'icône, page dédiée full-screen.',
+    pro:'Très découvrable, navigation claire, pattern standard des apps sociales',
+    con:'Passage de 2 à 3 onglets → onglets plus serrés, casse la symétrie actuelle',
+    screens: buildB
+  },
+  {
+    id:'C',
+    title:'C — Via le menu avatar',
+    desc:'Badge discret sur l\'avatar. Tap → menu déroulant avec item "Messages (2)". Navigation vers page /messages dédiée.',
+    pro:'Zéro changement à la navigation existante, cohérent avec les notifs déjà là',
+    con:'Caché derrière 2 taps, moins découvrable — peut passer inaperçu',
+    screens: buildC
+  },
+  {
+    id:'D',
+    title:'D — Icône dans le header',
+    desc:'Une icône chat apparaît dans le header à côté de l\'avatar sur toutes les pages principales. Badge de comptage. Tap → page /messages.',
+    pro:'Visible partout, 1 seul tap, ne touche pas à la nav du bas',
+    con:'Alourdit le header, peut être redondant avec les notifs déjà présentes',
+    screens: buildD
+  },
+];
+
+let currentConcept = 0;
+
+function selectTab(i) {
+  currentConcept = i;
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  render();
+}
+
+function render() {
+  const c = CONCEPTS[currentConcept];
+  const stage = document.getElementById('stage');
+  stage.innerHTML = '';
+
+  // Build phone
+  const wrap = document.createElement('div');
+  wrap.className = 'phone-wrap';
+
+  const phone = document.createElement('div');
+  phone.className = 'phone';
+  phone.id = 'phone-main';
+  c.screens(phone);
+  wrap.appendChild(phone);
+
+  // Nav hint
+  const hint = document.createElement('div');
+  hint.className = 'nav-hint';
+  hint.textContent = '↑ Clique sur les éléments pour naviguer';
+  wrap.appendChild(hint);
+
+  // Info
+  const info = document.createElement('div');
+  info.className = 'info';
+  info.innerHTML = `
+    <div class="concept-title">${c.title}</div>
+    <div class="concept-desc">${c.desc}</div>
+    <div class="pcons">
+      <div class="pro"><strong>✓ Avantages</strong>${c.pro}</div>
+      <div class="con"><strong>✗ Limites</strong>${c.con}</div>
+    </div>
+  `;
+
+  stage.appendChild(wrap);
+  stage.appendChild(info);
+}
+
+/* ── SVG icons ── */
+const IC = {
+  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  chat:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+  send:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,
+};
+
+/* ── Shared HTML builders ── */
+function dashboardBody() {
+  return `
+    <div class="pcontent">
+      <div class="fpills">
+        <button class="fpill active">Tous</button>
+        <button class="fpill inactive">Mes tournois</button>
+        <button class="fadd">Ajouter un tournoi</button>
+      </div>
+      <div class="hero">
+        <div class="hero-lbl">Prochain tournoi · Dans 3 jours</div>
+        <div class="hero-name">Tournoi Open Nantes</div>
+        <div class="hero-meta">📅 Samedi 26 avril · 📍 Nantes</div>
+      </div>
+      <div class="slabel">À venir</div>
+      <div class="dcard"><div class="sk" style="height:11px;width:60%"></div><div class="sk" style="height:9px;width:45%"></div></div>
+      <div class="dcard"><div class="sk" style="height:11px;width:70%"></div><div class="sk" style="height:9px;width:40%"></div></div>
+    </div>
+  `;
+}
+
+function inboxHTML(clickFn) {
+  const convs = [
+    {initials:'TM',color:'#7B1FA2',name:'Thomas M.',preview:'Tu joues samedi ?',time:'14:23',unread:2},
+    {initials:'LV',color:'#E65100',name:'Les Volcans',preview:'On se retrouve à 8h30 devant...',time:'10:45',unread:0},
+    {initials:'JP',color:'#1565C0',name:'Julie P.',preview:'Salut ! J\'ai vu que tu cherches...',time:'Hier',unread:1},
+    {initials:'MR',color:'#2E7D32',name:'Marc R.',preview:'Merci pour le match !',time:'Lun.',unread:0},
+  ];
+  return convs.map((c,i)=>`
+    <div class="conv-item" onclick="${clickFn}(${i})">
+      <div class="cav" style="background:${c.color}">${c.initials}</div>
+      <div class="cbody">
+        <div class="cname${c.unread?' unread':''}">${c.name}</div>
+        <div class="cprev${c.unread?' unread':''}">${c.preview}</div>
+      </div>
+      <div class="cmeta">
+        <div class="ctime">${c.time}</div>
+        ${c.unread?`<div class="cunread">${c.unread}</div>`:'<div style="width:17px"></div>'}
+      </div>
+    </div>
+  `).join('');
+}
+
+function chatHTML() {
+  return `
+    <div class="chat-msgs">
+      <div class="brow">
+        <div class="bav" style="background:#7B1FA2">TM</div>
+        <div>
+          <div class="bubble them">Salut ! Tu joues samedi au tournoi de Nantes ?</div>
+          <div class="btime">14:10</div>
+        </div>
+      </div>
+      <div class="brow me">
+        <div>
+          <div class="bubble me">Oui c'est prévu ! T'as une équipe ?</div>
+          <div class="btime">14:14</div>
+        </div>
+      </div>
+      <div class="brow">
+        <div class="bav" style="background:#7B1FA2">TM</div>
+        <div>
+          <div class="bubble them">Pas encore, on cherche un 3e. Tu veux venir ? Je suis départ+</div>
+          <div class="btime">14:18</div>
+        </div>
+      </div>
+      <div class="brow me">
+        <div>
+          <div class="bubble me">Carrément ! C'est à quelle heure ?</div>
+          <div class="btime">14:21</div>
+        </div>
+      </div>
+      <div class="brow">
+        <div class="bav" style="background:#7B1FA2">TM</div>
+        <div>
+          <div class="bubble them">Ça commence à 9h. On peut se faire confiance 💪</div>
+          <div class="btime">14:23</div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-bar">
+      <input class="chat-input" placeholder="Message…" />
+      <button class="send-btn">${IC.send}</button>
+    </div>
+  `;
+}
+
+/* ══════════ CONCEPT A — FAB ══════════ */
+function buildA(phone) {
+  let state = 0; // 0=dashboard+FAB, 1=slide-panel, 2=chat
+
+  function draw() {
+    phone.innerHTML = '';
+
+    /* Screen 0 : Dashboard + FAB */
+    const s0 = el('div','screen'+(state>0?' back':''));
+    s0.innerHTML = `
+      <div class="app-header">
+        <div class="hinner">
+          <div class="hrow">
+            <div><div class="htitle">Bonjour, Grégoire 👋</div><div class="hsub">2 tournois à venir</div></div>
+            <div class="av">GB</div>
+          </div>
+        </div>
+      </div>
+      ${dashboardBody()}
+      <div class="bnav">
+        <button class="ntab active">${IC.home}<span>Accueil</span></button>
+        <button class="ntab">${IC.search}<span>Explorer</span></button>
+      </div>
+    `;
+    const fab = el('button','fab');
+    fab.innerHTML = `${IC.chat}<div class="fab-badge">2</div>`;
+    fab.onclick = ()=>{ state=1; draw(); };
+    s0.appendChild(fab);
+    phone.appendChild(s0);
+
+    /* State 1 : Slide panel over dashboard */
+    if(state>=1) {
+      const overlay = el('div','overlay');
+      overlay.onclick = ()=>{ state=0; draw(); };
+      phone.appendChild(overlay);
+
+      const panel = el('div','slide-panel');
+      panel.innerHTML = `
+        <div class="panel-handle"></div>
+        <div class="panel-title">Messages <span style="font-size:11px;color:#788899;font-weight:500">· 3 non lus</span></div>
+        <div class="panel-body">${inboxHTML('convA')}</div>
+      `;
+      phone.appendChild(panel);
+    }
+
+    /* State 2 : Full chat screen */
+    if(state===2) {
+      const s2 = el('div','screen');
+      s2.innerHTML = `
+        <div class="app-header">
+          <div class="hinner" style="padding-top:22px">
+            <span class="back-btn" onclick="(function(){window._aState=1;window._aRedraw();})()">${IC.back} Retour</span>
+            <div class="hrow">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="bav" style="background:#7B1FA2;width:30px;height:30px;font-size:10px">TM</div>
+                <div><div class="htitle" style="font-size:14px">Thomas M.</div><div class="hsub">En ligne</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${chatHTML()}
+      `;
+      phone.appendChild(s2);
+    }
+    // expose for inline onclick
+    window._aState = state;
+    window._aRedraw = draw;
+  }
+  window.convA = (i)=>{ if(i===0){state=2; draw();} };
+  draw();
+}
+
+/* ══════════ CONCEPT B — 3ème onglet ══════════ */
+function buildB(phone) {
+  let state = 0; // 0=dashboard, 1=inbox, 2=chat
+
+  function draw() {
+    phone.innerHTML = '';
+    const s0 = el('div','screen'+(state>0?' back':''));
+    s0.innerHTML = `
+      <div class="app-header">
+        <div class="hinner">
+          <div class="hrow">
+            <div><div class="htitle">Bonjour, Grégoire 👋</div><div class="hsub">2 tournois à venir</div></div>
+            <div class="av">GB</div>
+          </div>
+        </div>
+      </div>
+      ${dashboardBody()}
+      <div class="bnav">
+        <button class="ntab${state===0?' active':''}">${IC.home}<span>Accueil</span></button>
+        <button class="ntab" onclick="(function(){window._bState=1;window._bRedraw();})()" style="position:relative">
+          ${IC.chat}
+          <div class="nav-badge">2</div>
+          <span>Messages</span>
+        </button>
+        <button class="ntab">${IC.search}<span>Explorer</span></button>
+      </div>
+    `;
+    phone.appendChild(s0);
+
+    if(state>=1) {
+      const s1 = el('div','screen'+(state===2?' back':''));
+      s1.innerHTML = `
+        <div class="app-header">
+          <div class="hinner">
+            <div class="hrow">
+              <div><div class="htitle">Messages</div><div class="hsub">3 non lus</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcontent">${inboxHTML('convB')}</div>
+        <div class="bnav">
+          <button class="ntab" onclick="(function(){window._bState=0;window._bRedraw();})()">${IC.home}<span>Accueil</span></button>
+          <button class="ntab active">${IC.chat}<span>Messages</span></button>
+          <button class="ntab">${IC.search}<span>Explorer</span></button>
+        </div>
+      `;
+      phone.appendChild(s1);
+    }
+
+    if(state===2) {
+      const s2 = el('div','screen');
+      s2.innerHTML = `
+        <div class="app-header">
+          <div class="hinner" style="padding-top:22px">
+            <span class="back-btn" onclick="(function(){window._bState=1;window._bRedraw();})()">${IC.back} Messages</span>
+            <div class="hrow">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="bav" style="background:#7B1FA2;width:30px;height:30px;font-size:10px">TM</div>
+                <div><div class="htitle" style="font-size:14px">Thomas M.</div><div class="hsub">En ligne</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${chatHTML()}
+      `;
+      phone.appendChild(s2);
+    }
+    window._bState=state; window._bRedraw=draw;
+  }
+  window.convB=(i)=>{ if(i===0){state=2;draw();} };
+  draw();
+}
+
+/* ══════════ CONCEPT C — Avatar menu ══════════ */
+function buildC(phone) {
+  let state = 0; // 0=dashboard (menu closed), 1=menu open, 2=inbox, 3=chat
+
+  function draw() {
+    phone.innerHTML = '';
+
+    const s0 = el('div','screen'+(state>=2?' back':''));
+    const avId = 'av-c-'+Date.now();
+    s0.innerHTML = `
+      <div class="app-header">
+        <div class="hinner">
+          <div class="hrow">
+            <div><div class="htitle">Bonjour, Grégoire 👋</div><div class="hsub">2 tournois à venir</div></div>
+            <div class="av" id="${avId}" onclick="window.toggleMenuC()" style="position:relative">
+              GB
+              <div class="av-badge">2</div>
+              ${state===1?`
+                <div class="av-menu" onclick="event.stopPropagation()">
+                  <div class="av-menu-item" style="color:#90A0B0;font-size:11px;cursor:default">Grégoire BERGAMIN</div>
+                  <div class="av-menu-sep"></div>
+                  <div class="av-menu-item">${IC.chat.replace('width="17px"','width="14px"').replace('height="17px"','height="14px"')} Messages <span class="av-menu-badge">2</span></div>
+                  <div class="av-menu-item" style="font-size:12px">👤 Mon profil</div>
+                  <div class="av-menu-item" style="font-size:12px">🔔 Notifications</div>
+                  <div class="av-menu-item" style="font-size:12px">👥 Mes groupes</div>
+                  <div class="av-menu-sep"></div>
+                  <div class="av-menu-item" style="font-size:12px;color:#E53935">🚪 Déconnexion</div>
+                </div>
+              `:''}
+            </div>
+          </div>
+        </div>
+      </div>
+      ${dashboardBody()}
+      <div class="bnav">
+        <button class="ntab active">${IC.home}<span>Accueil</span></button>
+        <button class="ntab">${IC.search}<span>Explorer</span></button>
+      </div>
+    `;
+    // Wire up Messages click in menu
+    if(state===1) {
+      setTimeout(()=>{
+        const items = phone.querySelectorAll('.av-menu-item');
+        items.forEach(it=>{ if(it.textContent.trim().startsWith('M')&&it.textContent.includes('Messages')) {
+          it.onclick = ()=>{ state=2; draw(); };
+        }});
+      },0);
+    }
+    phone.appendChild(s0);
+
+    if(state===1) {
+      const ov = el('div','overlay');
+      ov.onclick=()=>{state=0;draw();};
+      phone.appendChild(ov);
+    }
+
+    if(state>=2) {
+      const s2 = el('div','screen'+(state===3?' back':''));
+      s2.innerHTML = `
+        <div class="app-header">
+          <div class="hinner">
+            <div class="hrow">
+              <div><div class="htitle">Messages</div><div class="hsub">3 non lus</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcontent">${inboxHTML('convC')}</div>
+        <div class="bnav">
+          <button class="ntab">${IC.home}<span>Accueil</span></button>
+          <button class="ntab">${IC.search}<span>Explorer</span></button>
+        </div>
+      `;
+      phone.appendChild(s2);
+    }
+
+    if(state===3) {
+      const s3 = el('div','screen');
+      s3.innerHTML = `
+        <div class="app-header">
+          <div class="hinner" style="padding-top:22px">
+            <span class="back-btn" onclick="(function(){window._cState=2;window._cRedraw();})()">${IC.back} Messages</span>
+            <div class="hrow">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="bav" style="background:#7B1FA2;width:30px;height:30px;font-size:10px">TM</div>
+                <div><div class="htitle" style="font-size:14px">Thomas M.</div><div class="hsub">En ligne</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${chatHTML()}
+      `;
+      phone.appendChild(s3);
+    }
+    window._cState=state; window._cRedraw=draw;
+  }
+  window.toggleMenuC = ()=>{ state = state===1?0:1; draw(); };
+  window.convC=(i)=>{ if(i===0){state=3;draw();} };
+  draw();
+}
+
+/* ══════════ CONCEPT D — Icône header ══════════ */
+function buildD(phone) {
+  let state = 0;
+
+  function draw() {
+    phone.innerHTML='';
+    const s0 = el('div','screen'+(state>0?' back':''));
+    s0.innerHTML=`
+      <div class="app-header">
+        <div class="hinner">
+          <div class="hrow">
+            <div><div class="htitle">Bonjour, Grégoire 👋</div><div class="hsub">2 tournois à venir</div></div>
+            <div class="hactions">
+              <button class="hbtn" onclick="(function(){window._dState=1;window._dRedraw();})()" title="Messages">
+                ${IC.chat}
+                <div class="hbtn-badge">2</div>
+              </button>
+              <div class="av">GB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ${dashboardBody()}
+      <div class="bnav">
+        <button class="ntab active">${IC.home}<span>Accueil</span></button>
+        <button class="ntab">${IC.search}<span>Explorer</span></button>
+      </div>
+    `;
+    phone.appendChild(s0);
+
+    if(state>=1) {
+      const s1 = el('div','screen'+(state===2?' back':''));
+      s1.innerHTML=`
+        <div class="app-header">
+          <div class="hinner">
+            <div class="hrow">
+              <div><div class="htitle">Messages</div><div class="hsub">3 non lus</div></div>
+              <div class="av">GB</div>
+            </div>
+          </div>
+        </div>
+        <div class="pcontent">${inboxHTML('convD')}</div>
+        <div class="bnav">
+          <button class="ntab" onclick="(function(){window._dState=0;window._dRedraw();})()">${IC.home}<span>Accueil</span></button>
+          <button class="ntab">${IC.search}<span>Explorer</span></button>
+        </div>
+      `;
+      phone.appendChild(s1);
+    }
+
+    if(state===2) {
+      const s2 = el('div','screen');
+      s2.innerHTML=`
+        <div class="app-header">
+          <div class="hinner" style="padding-top:22px">
+            <span class="back-btn" onclick="(function(){window._dState=1;window._dRedraw();})()">${IC.back} Messages</span>
+            <div class="hrow">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="bav" style="background:#7B1FA2;width:30px;height:30px;font-size:10px">TM</div>
+                <div><div class="htitle" style="font-size:14px">Thomas M.</div><div class="hsub">En ligne</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${chatHTML()}
+      `;
+      phone.appendChild(s2);
+    }
+    window._dState=state; window._dRedraw=draw;
+  }
+  window.convD=(i)=>{ if(i===0){state=2;draw();} };
+  draw();
+}
+
+function el(tag, cls) {
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  return e;
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>

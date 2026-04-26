@@ -71,7 +71,8 @@ function getDateGroup(dateStr) {
   return 'later';
 }
 
-function TournamentSearch({ user, onLogout }) {
+function TournamentSearch({ user, onLogout, chatUnread = 0 }) {
+  const navigate = useNavigate();
   const [searchMode, setSearchMode] = useState('tournois'); // 'tournois' | 'membres'
   const [query, setQuery]           = useState('');
   const [results, setResults]       = useState([]);
@@ -256,7 +257,15 @@ function TournamentSearch({ user, onLogout }) {
               <div className="header-title">Explorer</div>
               <div className="header-subtitle">Trouve ton tournoi et ajoute le à ton groupe</div>
             </div>
-            <AvatarMenu user={user} onLogout={onLogout} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button className="header-icon-btn" onClick={() => navigate('/messages')} aria-label="Messages">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                {chatUnread > 0 && <span className="header-icon-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
+              </button>
+              <AvatarMenu user={user} onLogout={onLogout} />
+            </div>
           </div>
         </div>
       </div>

@@ -25,6 +25,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
   const [level, setLevel]           = useState(user?.level     || '');
   const [position, setPosition]     = useState(user?.position  || '');
   const [avatar, setAvatar]         = useState(user?.avatarUrl || null);
+  const [chatPreference, setChatPreference] = useState(user?.chatPreference || 'group_only');
   const [avatarChanged, setAvatarChanged] = useState(false);
   const [cropSrc, setCropSrc]       = useState(null);
 
@@ -65,7 +66,7 @@ function Profile({ user, onLogout, onUserUpdate }) {
       const body = {
         firstName: fn.charAt(0).toUpperCase() + fn.slice(1).toLowerCase(),
         lastName: ln.toUpperCase(),
-        phone, email, gender, level, position: position || null
+        phone, email, gender, level, position: position || null, chatPreference
       };
       if (avatarChanged)        body.avatarUrl = avatar;
       if (showPassword && newPwd) { body.currentPassword = currentPwd; body.newPassword = newPwd; }
@@ -229,6 +230,30 @@ function Profile({ user, onLogout, onUserUpdate }) {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Messagerie */}
+          <div className="card">
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+              Messagerie privée
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 10 }}>
+              Qui peut m'envoyer un message ?
+            </div>
+            {[
+              ['all',        'Tout le monde'],
+              ['group_only', 'Membres d\'un groupe commun uniquement'],
+              ['none',       'Personne'],
+            ].map(([val, lbl]) => (
+              <label key={val} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0',
+                borderBottom: val !== 'none' ? '1px solid var(--border)' : 'none',
+                cursor: 'pointer', fontSize: 13, fontWeight: 500, color: chatPreference === val ? 'var(--primary)' : 'var(--text)' }}>
+                <input type="radio" name="chatPref" value={val}
+                  checked={chatPreference === val} onChange={() => setChatPreference(val)}
+                  style={{ accentColor: 'var(--primary)', width: 16, height: 16, flexShrink: 0 }} />
+                {lbl}
+              </label>
+            ))}
           </div>
 
           {/* Changer le mot de passe */}

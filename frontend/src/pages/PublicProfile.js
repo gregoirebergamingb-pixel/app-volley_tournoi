@@ -63,9 +63,10 @@ export default function PublicProfile({ user }) {
   const token      = localStorage.getItem('token');
   const isOwnProfile = userId === user?.id;
 
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [profile, setProfile]       = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [msgLoading, setMsgLoading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -108,6 +109,21 @@ export default function PublicProfile({ user }) {
       </div>
     </>
   );
+
+  const canMessage = !isOwnProfile && profile.chatPreference !== 'none' &&
+    (profile.chatPreference === 'all' || profile.isGroupMember);
+
+  const handleMessage = async () => {
+    if (msgLoading) return;
+    setMsgLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/messages/conversations`,
+        { targetUserId: profile.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      navigate(`/messages/${res.data.id}`);
+    } catch { setMsgLoading(false); }
+  };
 
   const { stats, formatStats, surfaceStats, history, partners } = profile;
   const levelInfo   = LEVEL_LABELS[profile.level];
@@ -168,6 +184,20 @@ export default function PublicProfile({ user }) {
                 </div>
               )}
             </div>
+
+            {/* Message button */}
+            {canMessage && (
+              <button onClick={handleMessage} disabled={msgLoading}
+                style={{ background:'rgba(255,255,255,0.18)', color:'white',
+                  border:'1px solid rgba(255,255,255,0.4)', borderRadius:20,
+                  padding:'7px 18px', fontSize:13, fontWeight:700, cursor:'pointer',
+                  display:'flex', alignItems:'center', gap:7, opacity: msgLoading ? 0.6 : 1 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                {msgLoading ? 'Ouverture…' : 'Envoyer un message'}
+              </button>
+            )}
           </div>
         </div>
       </div>

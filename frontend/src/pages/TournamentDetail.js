@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import ResultsModal from '../components/ResultsModal';
+import WarnOnce from '../components/WarnOnce';
+
+const WARN_TEAM_MSG = "Il ne s'agit pas d'une inscription officielle mais d'un moyen de centraliser les informations et de vous organiser plus facilement. Pensez à vous inscrire sur les plateformes officielles.";
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const GENDER_LABELS  = { mix: 'Mixte', masculin: 'Masculin', feminin: 'Féminin' };
@@ -120,6 +123,8 @@ function TournamentDetail({ user }) {
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamExternals, setNewTeamExternals] = useState([]);
   const [newTeamVisibility, setNewTeamVisibility] = useState('open');
+  const [newTeamFormat, setNewTeamFormat] = useState('');
+  const [newTeamGender, setNewTeamGender] = useState('');
   const [pendingMembers, setPendingMembers] = useState([]); // users to add after creation
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   // Edit team modal
@@ -139,8 +144,8 @@ function TournamentDetail({ user }) {
   const [editDate, setEditDate]         = useState('');
   const [editTime, setEditTime]         = useState('');
   const [editLocation, setEditLocation] = useState('');
-  const [editFormat, setEditFormat]     = useState('');
-  const [editGender, setEditGender]     = useState('');
+  const [editFormats, setEditFormats]   = useState([]);
+  const [editGenders, setEditGenders]   = useState([]);
   const [editSurface, setEditSurface]   = useState('');
   const [editPrice, setEditPrice]       = useState('');
   const [editSuggestions, setEditSuggestions]   = useState([]);
@@ -180,20 +185,39 @@ function TournamentDetail({ user }) {
     e.preventDefault();
     setActionLoading(true); setError('');
     try {
+      const availableFormats = tournament.playerFormats || (tournament.playerFormat ? [tournament.playerFormat] : []);
+      const availableGenders = tournament.genders || (tournament.gender ? [tournament.gender] : []);
+      const teamFormat = availableFormats.length === 1 ? availableFormats[0] : newTeamFormat;
+      const teamGender = availableGenders.length === 1 ? availableGenders[0] : newTeamGender;
       const res = await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams`,
-        { name: newTeamName, externalMembers: newTeamExternals, visibility: newTeamVisibility },
+        { name: newTeamName, externalMembers: newTeamExternals, visibility: newTeamVisibility,
+          playerFormat: teamFormat, gender: teamGender },
         { headers: { Authorization: `Bearer ${token}` } });
-      // Add pending members one by one
       for (const m of pendingMembers) {
         try {
           await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${res.data.teamId}/add-member`,
             { userId: m.id }, { headers: { Authorization: `Bearer ${token}` } });
         } catch { /* ignore individual errors */ }
       }
-      setNewTeamName(''); setNewTeamExternals([]); setNewTeamVisibility('open'); setPendingMembers([]); setShowCreateTeam(false); fetchData();
+      setNewTeamName(''); setNewTeamExternals([]); setNewTeamVisibility('open');
+      setNewTeamFormat(''); setNewTeamGender('');
+      setPendingMembers([]); setShowCreateTeam(false); fetchData();
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la création');
     } finally { setActionLoading(false); }
+  };
+
+  const handleOpenChat = async (team) => {
+    if (team.conversationId) { navigate(`/messages/${team.conversationId}`); return; }
+    setActionLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/tournaments/${tournamentId}/teams/${team.id}/conversation`, {},
+        { headers: { Authorization: `Bearer ${token}` } });
+      navigate(`/messages/${res.data.id}`);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur');
+      setActionLoading(false);
+    }
   };
 
   const handleJoinTeam = async (teamId, externalMembers = []) => {
@@ -308,8 +332,10 @@ function TournamentDetail({ user }) {
 
   const startEditTournament = (t) => {
     setEditName(t.name); setEditDate(t.date); setEditTime(t.time || '');
-    setEditLocation(t.location); setEditFormat(t.playerFormat || t.format || '');
-    setEditGender(t.gender || ''); setEditSurface(t.surface || '');
+    setEditLocation(t.location);
+    setEditFormats(t.playerFormats || (t.playerFormat ? [t.playerFormat] : []));
+    setEditGenders(t.genders || (t.gender ? [t.gender] : []));
+    setEditSurface(t.surface || '');
     setEditPrice(t.price || '');
     setEditSuggestions([]); setEditShowSugg(false);
     setEditingTournament(true);
@@ -338,7 +364,10 @@ function TournamentDetail({ user }) {
     try {
       await axios.put(`${API_URL}/api/tournaments/${tournamentId}`,
         { name: editName.trim(), date: editDate, time: editTime, location: editLocation.trim(),
-          price: editPrice, playerFormat: editFormat, gender: editGender, surface: editSurface || null },
+          price: editPrice,
+          playerFormats: editFormats, playerFormat: editFormats[0] || '',
+          genders: editGenders, gender: editGenders[0] || '',
+          surface: editSurface || null },
         { headers: { Authorization: `Bearer ${token}` } });
       setEditingTournament(false); fetchData();
     } catch (err) {
@@ -422,8 +451,8 @@ function TournamentDetail({ user }) {
         </div>
       </div>
 
-      {/* Edit form */}
-      {editingTournament ? (
+      {/* Edit tournament form: stays fixed above scroll area */}
+      {editingTournament && (
         <div style={{ flexShrink:0, padding:'8px 12px 0' }}>
           <form onSubmit={handleSaveTournament}>
             <div className="form-group">
@@ -455,24 +484,30 @@ function TournamentDetail({ user }) {
               )}
             </div>
             <div className="form-group">
-              <label>Format</label>
+              <label>
+                Format(s)
+                <span style={{ fontSize:11, color:'#90A0B0', fontWeight:400, marginLeft:6 }}>Plusieurs possibles</span>
+              </label>
               <div className="format-picker">
                 {FORMATS.map(f => (
                   <button key={f} type="button"
-                    className={`format-option ${editFormat === f ? 'selected' : ''}`}
-                    onClick={() => setEditFormat(f)}>
+                    className={`format-option ${editFormats.includes(f) ? 'selected' : ''}`}
+                    onClick={() => setEditFormats(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f])}>
                     <span className="format-option-label">{f}</span>
                   </button>
                 ))}
               </div>
             </div>
             <div className="form-group">
-              <label>Catégorie</label>
+              <label>
+                Catégorie(s)
+                <span style={{ fontSize:11, color:'#90A0B0', fontWeight:400, marginLeft:6 }}>Plusieurs possibles</span>
+              </label>
               <div className="gender-picker">
                 {GENDERS.map(g => (
                   <button key={g.value} type="button"
-                    className={`gender-option-pill ${editGender === g.value ? 'selected' : ''}`}
-                    onClick={() => setEditGender(g.value)}>
+                    className={`gender-option-pill ${editGenders.includes(g.value) ? 'selected' : ''}`}
+                    onClick={() => setEditGenders(prev => prev.includes(g.value) ? prev.filter(x => x !== g.value) : [...prev, g.value])}>
                     {g.label}
                   </button>
                 ))}
@@ -497,100 +532,6 @@ function TournamentDetail({ user }) {
             </div>
           </form>
         </div>
-      ) : (
-        <div style={{ flexShrink: 0, padding: '8px 12px 0' }}>
-          <div className="tournament-info-grid" style={{ marginBottom: 8, gridTemplateColumns: '1fr 1fr auto' }}>
-            <div className="info-cell">
-              <span className="info-label">📅 Date</span>
-              <span className="info-value">{dateStr}</span>
-            </div>
-            <div className="info-cell">
-              <span className="info-label">🕐 Heure</span>
-              <span className="info-value">{tournament.time}</span>
-            </div>
-            <div className="info-cell" style={{ position:'relative', overflow:'visible' }}>
-              <span className="info-label">📅 Calendrier</span>
-              <button className="button-secondary btn-sm" onClick={() => setShowCalendar(v => !v)} style={{ fontSize:11 }}>
-                + Ajouter
-              </button>
-              {showCalendar && (
-                <div style={{ position:'absolute', top:'100%', right:0, marginTop:4, background:'#fff',
-                  border:'1px solid #E0E8F4', borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
-                  zIndex:100, minWidth:180, overflow:'hidden' }}>
-                  <a href={googleCalUrl(tournament)} target="_blank" rel="noreferrer"
-                    style={{ display:'block', padding:'10px 14px', fontSize:13, color:'#1565C0', textDecoration:'none', borderBottom:'1px solid #F0F4FF' }}
-                    onClick={() => setShowCalendar(false)}>
-                    🗓 Google Calendar
-                  </a>
-                  <button style={{ display:'block', width:'100%', textAlign:'left', padding:'10px 14px', fontSize:13, color:'#445', background:'none', border:'none', cursor:'pointer' }}
-                    onClick={() => { downloadICS(tournament); setShowCalendar(false); }}>
-                    📥 Apple / Outlook (.ics)
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="info-cell" style={{ gridColumn: '1/-1' }}>
-              <span className="info-label">📍 Lieu</span>
-              <span className="info-value">{tournament.location}</span>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:'6px', marginBottom: 8, flexWrap:'wrap' }}>
-            <span className="badge badge-blue">{tournament.playerFormat || tournament.format}</span>
-            <span className={`badge ${GENDER_BADGE[tournament.gender] || 'badge-grey'}`}>
-              {GENDER_LABELS[tournament.gender] || tournament.gender}
-            </span>
-            {tournament.surface && (
-              <span className={`badge ${SURFACE_BADGE[tournament.surface] || 'badge-grey'}`}>
-                {SURFACE_LABELS[tournament.surface]}
-              </span>
-            )}
-            {tournament.price > 0
-              ? <span className="badge badge-yellow">{tournament.price}€</span>
-              : <span className="badge badge-green">Gratuit</span>}
-          </div>
-          {tournament.externalUrl && (
-            <a href={tournament.externalUrl} target="_blank" rel="noreferrer"
-              className="button-secondary btn-sm"
-              style={{ display:'inline-flex', alignItems:'center', gap:6, marginBottom:8, textDecoration:'none' }}>
-              🔗 S'inscrire sur le site du tournoi
-            </a>
-          )}
-        </div>
-      )}
-
-      <div style={{ flexShrink: 0, padding: '0 12px 8px' }}>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <div className="search-bar" style={{ flex:1, margin:0 }}>
-            <span className="search-bar-icon">🔍</span>
-            <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Équipe ou joueur…" />
-            {searchQ && <button className="search-clear" onClick={() => setSearchQ('')}>✕</button>}
-          </div>
-          <button className={`filter-pill${levelFilters.size > 0 ? ' filter-pill-active' : ''}`}
-            onClick={() => setFiltersOpen(v => !v)} style={{ flexShrink:0 }}>
-            🎚 Filtres
-            {levelFilters.size > 0 && <span className="filter-pill-badge">{levelFilters.size}</span>}
-          </button>
-        </div>
-      </div>
-
-      {filtersOpen && (
-        <div className="filter-drawer-overlay" onClick={() => setFiltersOpen(false)}>
-          <div className="filter-drawer" onClick={e => e.stopPropagation()}>
-            <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', marginBottom:12 }}>Niveau de jeu</div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-              <button className={`chip${levelFilters.size === 0 ? ' active' : ''}`}
-                onClick={() => { setLevelFilters(new Set()); setFiltersOpen(false); }}>
-                Tous
-              </button>
-              {LEVEL_KEYS.map((lv, i) => (
-                <button key={lv} className={`chip${levelFilters.has(lv) ? ' active' : ''}`}
-                  onClick={() => toggleLevel(lv)}>
-                  {LEVEL_CHIPS[i]}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
 
       <div className="page-content" ref={pageRef} onTouchStart={ptrStart} onTouchEnd={ptrEnd}>
@@ -604,6 +545,105 @@ function TournamentDetail({ user }) {
           </div>
         )}
 
+        {/* Tournament info + search (scrolls with content when not editing) */}
+        {!editingTournament && (
+          <>
+            <div style={{ marginBottom: 8 }}>
+              <div className="tournament-info-grid" style={{ marginBottom: 8, gridTemplateColumns: '1fr 1fr auto' }}>
+                <div className="info-cell">
+                  <span className="info-label">📅 Date</span>
+                  <span className="info-value">{dateStr}</span>
+                </div>
+                <div className="info-cell">
+                  <span className="info-label">🕐 Heure</span>
+                  <span className="info-value">{tournament.time}</span>
+                </div>
+                <div className="info-cell" style={{ position:'relative', overflow:'visible' }}>
+                  <span className="info-label">📅 Calendrier</span>
+                  <button className="button-secondary btn-sm" onClick={() => setShowCalendar(v => !v)} style={{ fontSize:11 }}>
+                    + Ajouter
+                  </button>
+                  {showCalendar && (
+                    <div style={{ position:'absolute', top:'100%', right:0, marginTop:4, background:'#fff',
+                      border:'1px solid #E0E8F4', borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,0.10)',
+                      zIndex:100, minWidth:180, overflow:'hidden' }}>
+                      <a href={googleCalUrl(tournament)} target="_blank" rel="noreferrer"
+                        style={{ display:'block', padding:'10px 14px', fontSize:13, color:'#1565C0', textDecoration:'none', borderBottom:'1px solid #F0F4FF' }}
+                        onClick={() => setShowCalendar(false)}>
+                        🗓 Google Calendar
+                      </a>
+                      <button style={{ display:'block', width:'100%', textAlign:'left', padding:'10px 14px', fontSize:13, color:'#445', background:'none', border:'none', cursor:'pointer' }}
+                        onClick={() => { downloadICS(tournament); setShowCalendar(false); }}>
+                        📥 Apple / Outlook (.ics)
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="info-cell" style={{ gridColumn: '1/-1' }}>
+                  <span className="info-label">📍 Lieu</span>
+                  <span className="info-value">{tournament.location}</span>
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:'6px', marginBottom: 8, flexWrap:'wrap' }}>
+                {(tournament.playerFormats || (tournament.playerFormat ? [tournament.playerFormat] : [])).map(f => (
+                  <span key={f} className="badge badge-blue">{f}</span>
+                ))}
+                {(tournament.genders || (tournament.gender ? [tournament.gender] : [])).map(g => (
+                  <span key={g} className={`badge ${GENDER_BADGE[g] || 'badge-grey'}`}>{GENDER_LABELS[g] || g}</span>
+                ))}
+                {tournament.surface && (
+                  <span className={`badge ${SURFACE_BADGE[tournament.surface] || 'badge-grey'}`}>
+                    {SURFACE_LABELS[tournament.surface]}
+                  </span>
+                )}
+                {tournament.price > 0
+                  ? <span className="badge badge-yellow">{tournament.price}€</span>
+                  : <span className="badge badge-green">Gratuit</span>}
+              </div>
+              {tournament.externalUrl && (
+                <a href={tournament.externalUrl} target="_blank" rel="noreferrer"
+                  className="button-secondary btn-sm"
+                  style={{ display:'inline-flex', alignItems:'center', gap:6, marginBottom:8, textDecoration:'none' }}>
+                  🔗 S'inscrire sur le site du tournoi
+                </a>
+              )}
+            </div>
+
+            <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom: 8 }}>
+              <div className="search-bar" style={{ flex:1, margin:0 }}>
+                <span className="search-bar-icon">🔍</span>
+                <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Équipe ou joueur…" />
+                {searchQ && <button className="search-clear" onClick={() => setSearchQ('')}>✕</button>}
+              </div>
+              <button className={`filter-pill${levelFilters.size > 0 ? ' filter-pill-active' : ''}`}
+                onClick={() => setFiltersOpen(v => !v)} style={{ flexShrink:0 }}>
+                🎚 Filtres
+                {levelFilters.size > 0 && <span className="filter-pill-badge">{levelFilters.size}</span>}
+              </button>
+            </div>
+          </>
+        )}
+
+        {filtersOpen && (
+          <div className="filter-drawer-overlay" onClick={() => setFiltersOpen(false)}>
+            <div className="filter-drawer" onClick={e => e.stopPropagation()}>
+              <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', marginBottom:12 }}>Niveau de jeu</div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                <button className={`chip${levelFilters.size === 0 ? ' active' : ''}`}
+                  onClick={() => { setLevelFilters(new Set()); setFiltersOpen(false); }}>
+                  Tous
+                </button>
+                {LEVEL_KEYS.map((lv, i) => (
+                  <button key={lv} className={`chip${levelFilters.has(lv) ? ' active' : ''}`}
+                    onClick={() => toggleLevel(lv)}>
+                    {LEVEL_CHIPS[i]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Create team button / form */}
         {!myTeam && !showCreateTeam && user.gender && (
           <button style={{ width:'100%', marginBottom:12 }} onClick={() => setShowCreateTeam(true)}>
@@ -612,6 +652,8 @@ function TournamentDetail({ user }) {
         )}
 
         {showCreateTeam && (
+          <>
+          <WarnOnce storageKey="warn_create_team" message={WARN_TEAM_MSG} />
           <div className="create-team-form">
             <form onSubmit={handleCreateTeam}>
               <div className="form-group">
@@ -619,6 +661,38 @@ function TournamentDetail({ user }) {
                 <input type="text" value={newTeamName} onChange={e => setNewTeamName(e.target.value)}
                   placeholder="ex: Les Volcans" required autoFocus />
               </div>
+
+              {/* Format picker: only if tournament has multiple formats */}
+              {(tournament.playerFormats || []).length > 1 && (
+                <div className="form-group">
+                  <label>Format <span className="required-star">*</span></label>
+                  <div className="format-picker">
+                    {(tournament.playerFormats || []).map(f => (
+                      <button key={f} type="button"
+                        className={`format-option ${newTeamFormat === f ? 'selected' : ''}`}
+                        onClick={() => setNewTeamFormat(f)}>
+                        <span className="format-option-label">{f}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Gender picker: only if tournament has multiple genders */}
+              {(tournament.genders || []).length > 1 && (
+                <div className="form-group">
+                  <label>Catégorie <span className="required-star">*</span></label>
+                  <div className="gender-picker">
+                    {(tournament.genders || []).map(g => (
+                      <button key={g} type="button"
+                        className={`gender-option-pill ${newTeamGender === g ? 'selected' : ''}`}
+                        onClick={() => setNewTeamGender(g)}>
+                        {GENDER_LABELS[g] || g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Qui peut rejoindre ?</label>
@@ -678,7 +752,7 @@ function TournamentDetail({ user }) {
 
               <div style={{ display:'flex', gap:'8px' }}>
                 <button type="submit" disabled={actionLoading}>
-                  {actionLoading ? 'Création…' : `Créer (${1 + newTeamExternals.length} place${1+newTeamExternals.length>1?'s':''})`}
+                  {actionLoading ? 'Création…' : 'Créer'}
                 </button>
                 <button type="button" className="button-secondary"
                   onClick={() => { setShowCreateTeam(false); setNewTeamName(''); setNewTeamExternals([]); setNewTeamVisibility('open'); setPendingMembers([]); }}>
@@ -687,6 +761,7 @@ function TournamentDetail({ user }) {
               </div>
             </form>
           </div>
+          </>
         )}
 
         {myFilteredTeam && (
@@ -708,6 +783,7 @@ function TournamentDetail({ user }) {
               isPast={isPast}
               onResultsClick={() => setResultsModalTeam(myFilteredTeam)}
               onNavigateProfile={(id) => navigate(`/profil/${id}`)}
+              onChatClick={() => handleOpenChat(myFilteredTeam)}
             />
           </>
         )}
@@ -974,7 +1050,7 @@ function EditTeamModal({ team, name, setName, visibility, setVisibility, onSave,
 }
 
 function TeamCard({ team, isMyTeam, user, tournament, onJoin, onRequestJoin, onLeave, onDelete, onEdit,
-  onRemoveExternal, actionLoading, myTeam, isPast, onResultsClick, onNavigateProfile }) {
+  onRemoveExternal, actionLoading, myTeam, isPast, onResultsClick, onNavigateProfile, onChatClick }) {
 
   const [showJoinForm, setShowJoinForm] = useState(false);
 
@@ -1061,6 +1137,15 @@ function TeamCard({ team, isMyTeam, user, tournament, onJoin, onRequestJoin, onL
             {isPast && !team.results && (
               <button className="button-secondary btn-sm" onClick={onResultsClick}>
                 📊 Résultats
+              </button>
+            )}
+            {isMyTeam && (
+              <button className="button-secondary btn-sm" onClick={onChatClick}
+                style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Chat d'équipe
               </button>
             )}
             <button className="button-secondary btn-sm" onClick={() => onEdit(team)}>Modifier</button>
